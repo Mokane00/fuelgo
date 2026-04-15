@@ -6,6 +6,11 @@
     "start": "node backend/server.js",
     "postinstall": "npm install --prefix backend"
   },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.3.1",
+    "mysql2": "^3.6.5"
+  },
   "engines": {
     "node": ">=18.0.0"
   }
