@@ -1,0 +1,12 @@
+{
+  "name": "fuelgo",
+  "version": "1.0.0",
+  "description": "FuelGO — Digital fuel payment platform for Lesotho petrol stations",
+  "scripts": {
+    "start": "node backend/server.js",
+    "postinstall": "npm install --prefix backend"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
