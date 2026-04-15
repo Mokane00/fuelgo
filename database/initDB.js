@@ -8,14 +8,21 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config({ path: require('path').join(__dirname, '../backend/.env') });
 
 async function initDB() {
-  const conn = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-  });
+  // Support Railway MYSQL_URL or individual env vars
+  let connConfig;
+  if (process.env.MYSQL_URL) {
+    connConfig = { uri: process.env.MYSQL_URL };
+  } else {
+    connConfig = {
+      host:     process.env.DB_HOST     || 'localhost',
+      port:     process.env.DB_PORT     || 3306,
+      user:     process.env.DB_USER     || 'root',
+      password: process.env.DB_PASSWORD || '',
+    };
+  }
+  const conn = await mysql.createConnection(connConfig);
   try {
-    const DB = process.env.DB_NAME || 'fuelgo_db';
+    const DB = process.env.DB_NAME || (process.env.MYSQL_URL ? new URL(process.env.MYSQL_URL).pathname.slice(1) : 'fuelgo_db');
     await conn.query(`CREATE DATABASE IF NOT EXISTS \`${DB}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
     await conn.query(`USE \`${DB}\``);
 
