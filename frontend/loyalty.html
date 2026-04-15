@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta name="description" content="FuelGO — Digital fuel payment platform for petrol stations">
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <title>FuelGO – Loyalty Rewards</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    .rewards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .reward-card {
+      background: white; border: 2px solid var(--border); border-radius: var(--radius-md);
+      padding: 24px; text-align: center; transition: all var(--transition-bounce); position: relative;
+    }
+    .reward-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+    .reward-card.locked { opacity: 0.6; }
+    .reward-icon { font-size: 44px; margin-bottom: 12px; }
+    .reward-name { font-weight: 700; font-size: 1rem; margin-bottom: 6px; }
+    .reward-desc { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 16px; }
+    .reward-cost { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; color: var(--accent); margin-bottom: 12px; }
+    .reward-tag {
+      position: absolute; top: 12px; right: 12px;
+      background: var(--gradient-accent); color: white;
+      font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: var(--radius-full);
+    }
+    .loyalty-history-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+    .loyalty-history-item:last-child { border-bottom: none; }
+    .lh-icon { width: 40px; height: 40px; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .lh-icon.earned { background: var(--success-bg); }
+    .lh-icon.redeemed { background: rgba(249,115,22,0.1); }
+    .lh-pts { font-weight: 800; font-family: 'Syne', sans-serif; white-space: nowrap; }
+    .lh-pts.earned { color: var(--success); }
+    .lh-pts.redeemed { color: var(--accent-dark); }
+    .tier-card {
+      background: white; border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 20px; text-align: center;
+    }
+    .tier-card.active { border-color: var(--accent); background: rgba(249,115,22,0.04); }
+    .tier-icon { font-size: 32px; margin-bottom: 8px; }
+    .tier-name { font-weight: 700; font-size: 0.95rem; }
+    .tier-pts { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
+
+    /* Confetti burst */
+    .confetti-piece {
+      position: fixed; width: 10px; height: 10px; border-radius: 2px;
+      pointer-events: none; z-index: 99999;
+      animation: confetti-fall linear forwards;
+    }
+    @keyframes confetti-fall {
+      0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+      80%  { opacity: 1; }
+      100% { transform: translateY(90vh) rotate(720deg) scale(0.5); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <a href="dashboard.html" class="sidebar-logo">
+        <div class="sidebar-logo-icon"><i class="fa-solid fa-gas-pump"></i></div>
+        <img src="assets/logo.svg" alt="FuelGO" style="height:36px;width:auto">
+      </a>
+      <nav class="sidebar-nav" id="sidebar-nav"></nav>
+      <div class="sidebar-user">
+        <div class="avatar avatar-md avatar-primary" id="user-avatar">JM</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="user-name">Loading…</div>
+          <div class="sidebar-user-role" id="user-role">Customer</div>
+        </div>
+        <button class="sidebar-logout" data-logout><i class="fa-solid fa-right-from-bracket"></i></button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-content" style="animation:slideUp 0.4s ease both">
+        <div class="page-header" style="margin-bottom:20px">
+          <div>
+            <h1 class="page-title"><i class="fa-solid fa-star" style="color:var(--accent)"></i> Loyalty Rewards</h1>
+            <p class="page-subtitle">Earn points every fill-up, redeem for great rewards</p>
+          </div>
+          <a href="analytics.html" class="btn btn-ghost btn-sm"><i class="fa-solid fa-chart-pie"></i> Analytics</a>
+        </div>
+
+        <!-- Hero Points Card -->
+        <div class="points-hero" style="margin-bottom:28px;position:relative">
+          <div class="particles-container" id="pts-particles"></div>
+          <div style="position:relative;z-index:2;text-align:center">
+            <div style="font-size:48px;margin-bottom:8px;animation:float 3s ease infinite"><i class="fa-solid fa-star"></i></div>
+            <div style="font-size:0.9rem;opacity:0.8;margin-bottom:4px">Your Balance</div>
+            <div class="points-value" id="pts-balance">…</div>
+            <div class="points-label">Loyalty Points</div>
+            <div style="margin-top:24px;max-width:320px;margin-left:auto;margin-right:auto">
+              <div style="display:flex;justify-content:space-between;font-size:0.8rem;opacity:0.8;margin-bottom:8px">
+                <span id="pts-tier-current">Silver</span>
+                <span id="pts-tier-next">Gold at 3,000 pts</span>
+              </div>
+              <div class="progress">
+                <div class="progress-bar" id="pts-bar" style="--progress-width:0%"></div>
+              </div>
+              <div style="font-size:0.8rem;opacity:0.7;margin-top:8px" id="pts-to-next">Loading…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tiers -->
+        <div class="card" style="margin-bottom:28px">
+          <div class="section-header"><h3 class="section-title"><i class="fa-solid fa-star"></i> Reward Tiers</h3></div>
+          <div class="grid-4" id="tiers-grid" style="grid-template-columns:repeat(4,1fr);gap:12px">
+            <div class="tier-card" id="tier-bronze"><div class="tier-icon"><i class="fa-solid fa-award"></i></div><div class="tier-name">Bronze</div><div class="tier-pts">M0 – M4,999 spent</div></div>
+            <div class="tier-card" id="tier-silver"><div class="tier-icon"><i class="fa-solid fa-medal"></i></div><div class="tier-name">Silver</div><div class="tier-pts">M5,000 – M19,999 spent</div></div>
+            <div class="tier-card" id="tier-gold"><div class="tier-icon"><i class="fa-solid fa-trophy"></i></div><div class="tier-name">Gold</div><div class="tier-pts">M20,000 – M49,999 spent</div></div>
+            <div class="tier-card" id="tier-platinum"><div class="tier-icon"><i class="fa-solid fa-gem"></i></div><div class="tier-name">Platinum</div><div class="tier-pts">M50,000+ spent</div></div>
+          </div>
+        </div>
+
+        <!-- Rewards Catalogue -->
+        <div class="section-header" style="margin-bottom:20px">
+          <h3 class="section-title"><i class="fa-solid fa-gift"></i> Rewards Catalogue</h3>
+          <span class="badge badge-muted" id="rewards-count">Loading…</span>
+        </div>
+        <div class="rewards-grid" id="rewards-grid">
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+        </div>
+
+        <!-- Transaction History -->
+        <div class="card">
+          <div class="section-header"><h3 class="section-title"><i class="fa-solid fa-chart-line"></i> Points History</h3></div>
+          <div id="loyalty-history">
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <nav class="bottom-nav" id="bottom-nav"></nav>
+
+  <!-- Back to top -->
+  <button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top"
+    style="display:none;position:fixed;bottom:80px;right:20px;z-index:900;width:44px;height:44px;border-radius:50%;background:var(--accent);color:white;border:none;cursor:pointer;box-shadow:var(--shadow-md);font-size:18px;transition:all 0.2s">
+    <i class="fa-solid fa-arrow-up"></i>
+  </button>
+
+  <!-- Redeem Confirm Modal -->
+  <div class="modal-overlay" id="redeem-modal" style="display:none" onclick="closeModalOnOverlay(event,'redeem-modal')">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <h2 class="modal-title">Redeem Reward</h2>
+        <button class="modal-close" onclick="closeModal('redeem-modal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align:center;padding:8px 0 20px">
+          <div id="redeem-icon" style="font-size:48px;margin-bottom:12px"></div>
+          <h3 id="redeem-name" style="margin-bottom:8px"></h3>
+          <p id="redeem-desc" style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:20px"></p>
+          <div style="background:rgba(249,115,22,0.08);border-radius:var(--radius-sm);padding:16px;font-size:0.95rem">
+            Points to deduct: <strong id="redeem-cost" style="color:var(--accent-dark)"></strong><br>
+            New balance: <strong id="redeem-new-balance"></strong>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('redeem-modal')">Cancel</button>
+        <button class="btn btn-accent" id="confirm-redeem-btn">Redeem Now <i class="fa-solid fa-star"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/loader.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    const user = initAppFrame('customer');
+    let balance = 0;
+    let rewards = [];
+
+    const rewardIcons = { Fuel:'<i class="fa-solid fa-gas-pump"></i>', Discount:'<i class="fa-solid fa-ticket"></i>', Service:'<i class="fa-solid fa-shower"></i>', Upgrade:'<i class="fa-solid fa-gem"></i>', Special:'<i class="fa-solid fa-gift"></i>' };
+
+    async function loadLoyalty() {
+      try {
+        const [data, rewardList, historyList] = await Promise.all([
+          API.loyalty.get(),
+          API.loyalty.getRewards(),
+          API.loyalty.getTransactions(),
+        ]);
+        balance = data.points_balance || 0;
+        rewards = rewardList || [];
+
+        // Update balance display
+        document.getElementById('pts-balance').textContent = balance.toLocaleString();
+
+        // Tier logic — based on total_spent (matches backend)
+        const tierThresholds = [
+          { name:'Bronze',   min:0,     max:4999  },
+          { name:'Silver',   min:5000,  max:19999 },
+          { name:'Gold',     min:20000, max:49999 },
+          { name:'Platinum', min:50000, max:Infinity },
+        ];
+        const totalSpent = parseFloat(data.total_spent || 0);
+        const current = tierThresholds.find(t => totalSpent >= t.min && totalSpent <= t.max) || tierThresholds[0];
+        const next = tierThresholds[tierThresholds.indexOf(current) + 1];
+        document.getElementById('pts-tier-current').textContent = data.tier || current.name;
+        if (next) {
+          document.getElementById('pts-tier-next').textContent = `${next.name} at M ${next.min.toLocaleString()} spent`;
+          const progress = ((totalSpent - current.min) / (next.min - current.min)) * 100;
+          document.getElementById('pts-bar').style.setProperty('--progress-width', Math.min(progress, 100) + '%');
+          document.getElementById('pts-to-next').textContent = `M ${(next.min - totalSpent).toLocaleString()} more spending to ${next.name}`;
+        } else {
+          document.getElementById('pts-tier-next').textContent = 'Max Tier Reached!';
+          document.getElementById('pts-bar').style.setProperty('--progress-width', '100%');
+          document.getElementById('pts-to-next').textContent = '🏆 Platinum — Maximum tier reached!';
+        }
+
+        // Highlight current tier
+        ['tier-bronze','tier-silver','tier-gold','tier-platinum'].forEach(id => document.getElementById(id)?.classList.remove('active'));
+        const tierIds = { Bronze:'tier-bronze', Silver:'tier-silver', Gold:'tier-gold', Platinum:'tier-platinum' };
+        if (tierIds[current.name]) { document.getElementById(tierIds[current.name])?.classList.add('active'); }
+
+        // Rewards from API
+        document.getElementById('rewards-count').textContent = `${rewards.length} rewards`;
+        document.getElementById('rewards-grid').innerHTML = rewards.length ? rewards.map(r => `
+          <div class="reward-card ${balance < r.points_required ? 'locked' : ''}">
+            ${r.category === 'Fuel' ? '<div class="reward-tag">Popular</div>' : ''}
+            <div class="reward-icon">${rewardIcons[r.category] || '<i class="fa-solid fa-gift"></i>'}</div>
+            <div class="reward-name">${r.reward_name}</div>
+            <div class="reward-desc">${r.description || ''}</div>
+            <div class="reward-cost">${r.points_required.toLocaleString()} pts</div>
+            <button class="btn btn-accent btn-full btn-sm" ${balance < r.points_required ? 'disabled title="Not enough points"' : ''} onclick="openRedeem(${r.reward_id})">
+              ${balance < r.points_required ? `<i class="fa-solid fa-lock"></i> Need ${(r.points_required - balance).toLocaleString()} more pts` : 'Redeem →'}
+            </button>
+          </div>
+        `).join('') : '<p class="text-muted">No rewards available at the moment.</p>';
+
+        // History from API
+        document.getElementById('loyalty-history').innerHTML = historyList.length ? historyList.map(h => `
+          <div class="loyalty-history-item">
+            <div class="lh-icon ${h.type}">
+              ${h.type === 'earned' ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-solid fa-gift"></i>'}
+            </div>
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:0.9rem">${h.description || '—'}</div>
+              <div style="font-size:0.8rem;color:var(--text-secondary)">${formatDate(h.created_at)}</div>
+            </div>
+            <div class="lh-pts ${h.type}">
+              ${h.points > 0 ? '+' : ''}${(h.points || 0).toLocaleString()} pts
+            </div>
+          </div>
+        `).join('') : '<div class="empty-state"><div class="empty-state-icon"><i class="fa-solid fa-star"></i></div><p class="empty-state-title">No points history yet</p><p class="empty-state-text">Start fueling to earn points!</p></div>';
+
+        document.querySelectorAll('.btn').forEach(addRipple);
+        hidePageLoader();
+      } catch(e) {
+        hidePageLoader();
+        showToast('Failed to load loyalty data', 'danger');
+      }
+    }
+
+    function openRedeem(rewardId) {
+      const r = rewards.find(r => r.reward_id === rewardId);
+      if (!r || balance < r.points_required) return;
+      document.getElementById('redeem-icon').innerHTML = rewardIcons[r.category] || '<i class="fa-solid fa-gift"></i>';
+      document.getElementById('redeem-name').textContent = r.reward_name;
+      document.getElementById('redeem-desc').textContent = r.description || '';
+      document.getElementById('redeem-cost').textContent = r.points_required.toLocaleString() + ' pts';
+      document.getElementById('redeem-new-balance').textContent = (balance - r.points_required).toLocaleString() + ' pts';
+      document.getElementById('confirm-redeem-btn').onclick = () => confirmRedeem(r);
+      openModal('redeem-modal');
+    }
+
+    function burstConfetti() {
+      const colors = ['#f97316','#0f2548','#22c55e','#8b5cf6','#fbbf24','#ec4899'];
+      for (let i = 0; i < 60; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti-piece';
+        el.style.cssText = `
+          left: ${10 + Math.random() * 80}vw;
+          top: ${-10 - Math.random() * 20}px;
+          background: ${colors[Math.floor(Math.random() * colors.length)]};
+          width: ${6 + Math.random() * 8}px;
+          height: ${6 + Math.random() * 8}px;
+          border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+          animation-duration: ${1.2 + Math.random() * 1.6}s;
+          animation-delay: ${Math.random() * 0.4}s;
+        `;
+        document.body.appendChild(el);
+        el.addEventListener('animationend', () => el.remove());
+      }
+    }
+
+    async function confirmRedeem(r) {
+      const btn = document.getElementById('confirm-redeem-btn');
+      setBtnLoading(btn, true);
+      try {
+        const result = await API.loyalty.redeem(r.reward_id);
+        closeModal('redeem-modal');
+        burstConfetti();
+        notify('success', 'Reward Redeemed!', `"${r.reward_name}" redeemed! New balance: ${result.new_balance.toLocaleString()} pts`);
+        await loadLoyalty();
+      } catch(e) { showToast(e.message, 'danger'); }
+      setBtnLoading(btn, false);
+    }
+
+    createParticles(document.getElementById('pts-particles'), 10);
+    loadLoyalty();
+
+    // Back to top visibility
+    window.addEventListener('scroll', () => {
+      const btn = document.getElementById('back-to-top');
+      if (btn) btn.style.display = window.scrollY > 300 ? 'flex' : 'none';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta name="description" content="FuelGO — Digital fuel payment platform for petrol stations">
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FuelGO – Sign In</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    body { overflow: hidden; }
+    @media (max-width: 767px) { body { overflow-y: auto; } }
+
+    .split-left {
+      background-image: url("car-refueling-on-a-petrol-station-DHABX9 (1).jpg");
+      background-size: cover;
+      background-position: center;
+    }
+    .split-left-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(15,37,72,0.92) 0%, rgba(26,60,110,0.85) 60%, rgba(249,115,22,0.2) 100%);
+      z-index: 1;
+    }
+    .brand-logo {
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 40px;
+      animation: slideInLeft 0.6s ease both;
+    }
+    .brand-icon {
+      width: 52px; height: 52px;
+      background: var(--gradient-accent);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      box-shadow: var(--shadow-accent);
+    }
+    .brand-name { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: white; }
+    .brand-name span { color: var(--accent-light); }
+    .hero-headline {
+      font-size: 2.8rem; font-weight: 800; color: white; line-height: 1.15;
+      margin-bottom: 20px;
+      animation: slideInLeft 0.6s ease 0.1s both;
+    }
+    .hero-headline em { color: var(--accent-light); font-style: normal; }
+    .hero-tagline {
+      font-size: 1.05rem; color: rgba(255,255,255,0.75); line-height: 1.7;
+      margin-bottom: 48px;
+      animation: slideInLeft 0.6s ease 0.2s both;
+    }
+    .feature-list { display: flex; flex-direction: column; gap: 16px; animation: slideInLeft 0.6s ease 0.3s both; }
+    .feature-item {
+      display: flex; align-items: center; gap: 14px;
+      color: rgba(255,255,255,0.85); font-size: 0.95rem; font-weight: 500;
+    }
+    .feature-icon {
+      width: 40px; height: 40px;
+      background: rgba(249,115,22,0.2);
+      border: 1px solid rgba(249,115,22,0.4);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .fuel-animation {
+      position: absolute; bottom: 40px; right: 40px; z-index: 2;
+      animation: float 4s ease-in-out infinite;
+      font-size: 100px; opacity: 0.15;
+    }
+    .login-container {
+      width: 100%; max-width: 440px;
+      animation: slideInRight 0.6s ease 0.1s both;
+    }
+    .login-header { margin-bottom: 36px; }
+    .login-welcome { font-size: 2rem; font-weight: 800; color: var(--text-primary); }
+    .login-subtitle { color: var(--text-secondary); margin-top: 8px; font-size: 0.95rem; }
+    .demo-hint {
+      background: rgba(249,115,22,0.08);
+      border: 1px solid rgba(249,115,22,0.2);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      margin-bottom: 24px;
+      font-size: 0.82rem;
+      color: var(--accent-dark);
+    }
+    .demo-hint strong { display: block; margin-bottom: 4px; font-weight: 700; }
+    .demo-hint a { color: var(--accent); cursor: pointer; text-decoration: underline; }
+    .demo-accounts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .demo-acc-btn {
+      padding: 4px 12px;
+      background: var(--accent);
+      color: white;
+      border-radius: var(--radius-full);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all var(--transition);
+    }
+    .demo-acc-btn:hover { background: var(--accent-dark); transform: scale(1.05); }
+    .forgot-link { font-size: 0.85rem; color: var(--accent); font-weight: 600; text-decoration: none; }
+    .forgot-link:hover { text-decoration: underline; }
+    .register-link { text-align: center; font-size: 0.9rem; color: var(--text-secondary); margin-top: 24px; }
+    .register-link a { color: var(--primary); font-weight: 700; }
+    .register-link a:hover { text-decoration: underline; }
+    .error-banner {
+      display: none;
+      background: var(--danger-bg);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      color: var(--danger);
+      font-size: 0.88rem;
+      font-weight: 500;
+      align-items: center; gap: 8px;
+    }
+    .error-banner.show { display: flex; animation: slideDown 0.3s ease; }
+
+    /* Forgot Password Modal */
+    #forgot-modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 99998;
+      background: rgba(0,0,0,0.55); align-items: center; justify-content: center;
+    }
+    #forgot-modal-overlay.show { display: flex; animation: slideDown 0.2s ease; }
+    #forgot-modal-box {
+      background: #fff; border-radius: 18px; padding: 36px 32px;
+      max-width: 400px; width: 92%; box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+      animation: slideDown 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .dark-mode #forgot-modal-box { background: #1e293b; }
+    #forgot-modal-box h3 { margin: 0 0 6px; font-size: 1.2rem; color: var(--primary); }
+    #forgot-modal-box p { margin: 0 0 20px; color: var(--text-secondary); font-size: 0.88rem; }
+    #forgot-error { display:none; color:var(--danger); font-size:0.85rem; margin-bottom:12px; }
+    #forgot-error.show { display:block; }
+  </style>
+</head>
+<body>
+  <div class="split-layout">
+    <!-- Left Panel -->
+    <div class="split-left">
+      <div class="split-left-overlay"></div>
+      <div class="particles-container" id="particles"></div>
+      <div class="split-left-content" style="position:relative;z-index:2;color:white">
+        <div class="brand-logo">
+          <div class="brand-icon"><i class="fa-solid fa-gas-pump"></i></div>
+          <div class="brand-name">Fuel<span>GO</span></div>
+        </div>
+        <h1 class="hero-headline">Fuel Smarter.<br><em>Pay Faster.</em><br>Drive Further.</h1>
+        <p class="hero-tagline">The all-in-one digital platform for petrol station services. Find stations, pay at the pump, and earn loyalty rewards — all from your phone.</p>
+        <div class="feature-list">
+          <div class="feature-item">
+            <div class="feature-icon"><i class="fa-solid fa-location-dot"></i></div>
+            <span>Locate nearby stations in real-time</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon"><i class="fa-solid fa-credit-card"></i></div>
+            <span>Pay at the pump digitally</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon"><i class="fa-solid fa-star"></i></div>
+            <span>Earn and redeem loyalty points</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon"><i class="fa-solid fa-chart-bar"></i></div>
+            <span>Track spending per vehicle</span>
+          </div>
+        </div>
+      </div>
+      <div class="fuel-animation"><i class="fa-solid fa-gas-pump"></i></div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="split-right">
+      <div class="login-container">
+        <div class="login-header">
+          <h2 class="login-welcome">Welcome back</h2>
+          <p class="login-subtitle">Sign in to your FuelGO account to continue</p>
+        </div>
+
+        <div class="demo-hint">
+          <strong><i class="fa-solid fa-bullseye"></i> Demo Mode — Click to auto-fill:</strong>
+          <div class="demo-accounts">
+            <button class="demo-acc-btn" onclick="fillDemo('customer')">Customer</button>
+            <button class="demo-acc-btn" onclick="fillDemo('employee')">Employee</button>
+            <button class="demo-acc-btn" onclick="fillDemo('admin')">Admin</button>
+          </div>
+        </div>
+
+        <div class="error-banner" id="error-banner">
+          <span><i class="fa-solid fa-triangle-exclamation"></i></span>
+          <span id="error-text">Invalid email or password</span>
+        </div>
+
+        <form id="login-form">
+          <div class="form-group">
+            <label class="form-label" for="email">Email Address</label>
+            <div class="input-group">
+              <span class="input-icon"><i class="fa-solid fa-envelope"></i></span>
+              <input type="email" id="email" class="form-control" placeholder="you@example.com" autocomplete="email" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <label class="form-label" style="margin:0" for="password">Password</label>
+              <a href="#" class="forgot-link">Forgot password?</a>
+            </div>
+            <div class="input-group input-group-right">
+              <input type="password" id="password" class="form-control" placeholder="Enter your password" autocomplete="current-password" required>
+              <button type="button" class="input-icon-right" id="toggle-pw" style="background:none;border:none;cursor:pointer;font-size:18px"><i class="fa-regular fa-eye"></i></button>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:28px">
+            <label class="check-group">
+              <input type="checkbox" id="remember-me">
+              <span class="check-label">Remember me on this device</span>
+            </label>
+          </div>
+          <button type="submit" class="btn btn-accent btn-full btn-lg" id="login-btn">
+            Sign In
+          </button>
+        </form>
+
+        <div style="display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--text-secondary);font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em">
+          <span style="flex:1;height:1px;background:var(--border)"></span>or continue with<span style="flex:1;height:1px;background:var(--border)"></span>
+        </div>
+        <a href="http://localhost:5001/api/auth/google" class="btn btn-outline-primary btn-full" style="gap:10px;font-size:0.9rem">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Sign in with Google
+        </a>
+        <div class="register-link">
+          Don't have an account? <a href="register.html">Create one free</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Forgot Password Modal -->
+  <div id="forgot-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="forgot-modal-title">
+    <div id="forgot-modal-box">
+      <!-- Step 1: Enter email -->
+      <div id="forgot-step1">
+        <h3 id="forgot-modal-title">Reset Password</h3>
+        <p>Enter your account email and we'll send you a 6-digit code.</p>
+        <div id="forgot-error" role="alert"></div>
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="form-label" for="forgot-email">Email address</label>
+          <input type="email" id="forgot-email" class="form-control" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+          <button class="btn btn-ghost btn-sm" onclick="closeForgotModal()">Cancel</button>
+          <button class="btn btn-primary btn-sm" id="forgot-send-btn" onclick="sendResetCode()">Send Code</button>
+        </div>
+      </div>
+      <!-- Step 2: Enter code + new password -->
+      <div id="forgot-step2" style="display:none">
+        <h3>Enter Reset Code</h3>
+        <p id="forgot-step2-hint">A 6-digit code was sent to your email.</p>
+        <div id="forgot-error2" style="display:none;color:var(--danger);font-size:0.85rem;margin-bottom:12px" role="alert"></div>
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="form-label" for="forgot-code">6-digit code</label>
+          <input type="text" id="forgot-code" class="form-control" placeholder="123456" maxlength="6" autocomplete="one-time-code" inputmode="numeric" style="letter-spacing:6px;font-size:1.3rem;text-align:center">
+        </div>
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="form-label" for="forgot-newpw">New password</label>
+          <input type="password" id="forgot-newpw" class="form-control" placeholder="Min 8 chars, 1 uppercase, 1 number, 1 special" autocomplete="new-password">
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+          <button class="btn btn-ghost btn-sm" onclick="closeForgotModal()">Cancel</button>
+          <button class="btn btn-primary btn-sm" id="forgot-confirm-btn" onclick="confirmReset()">Reset Password</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/loader.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // Handle Google OAuth callback (?token=&user=)
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+      const userStr = params.get('user');
+      const oauthError = params.get('error');
+      if (oauthError) {
+        document.getElementById('error-text').textContent = 'Google sign-in failed. Please try again.';
+        document.getElementById('error-banner').classList.add('show');
+      }
+      if (token && userStr) {
+        try {
+          const user = JSON.parse(decodeURIComponent(userStr));
+          setToken(token);
+          setUser(user);
+          const redirectMap = { customer: 'dashboard.html', employee: 'employee-dashboard.html', admin: 'admin-dashboard.html' };
+          window.location.replace(redirectMap[user.role] || 'dashboard.html');
+          return;
+        } catch(e) { /* fall through to login page */ }
+      }
+      // Clean URL
+      if (params.has('token') || params.has('error')) {
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    })();
+
+    // Redirect if already logged in
+    redirectIfLoggedIn();
+
+    // Particles
+    createParticles(document.getElementById('particles'), 15);
+
+    // Toggle password visibility
+    document.getElementById('toggle-pw').addEventListener('click', function() {
+      const pw = document.getElementById('password');
+      const isText = pw.type === 'text';
+      pw.type = isText ? 'password' : 'text';
+      this.innerHTML = isText ? '<i class="fa-regular fa-eye"></i>' : '<i class="fa-regular fa-eye-slash"></i>';
+    });
+
+    // Demo fill
+    const demoAccounts = {
+      customer: { email: 'justin@fuelgo.ls', password: 'demo123' },
+      employee: { email: 'sarah@fuelgo.ls', password: 'demo123' },
+      admin: { email: 'admin@fuelgo.ls', password: 'Admin@2025' },
+    };
+    function fillDemo(role) {
+      const acc = demoAccounts[role];
+      document.getElementById('email').value = acc.email;
+      document.getElementById('password').value = acc.password;
+      document.getElementById('email').classList.add('is-valid');
+      document.getElementById('password').classList.add('is-valid');
+    }
+
+    // Login form
+    document.getElementById('login-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const errorBanner = document.getElementById('error-banner');
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!validateEmail(email)) {
+        document.getElementById('email').classList.add('is-invalid');
+        return;
+      }
+
+      errorBanner.classList.remove('show');
+      setBtnLoading(btn, true);
+
+      try {
+        const { user } = await API.auth.login({ email, password });
+        notify('success', 'Welcome back', `${user.first_name}, you are now signed in.`);
+        const redirectMap = { customer: 'dashboard.html', employee: 'employee-dashboard.html', admin: 'admin-dashboard.html' };
+        setTimeout(() => window.location.href = redirectMap[user.role] || 'dashboard.html', 800);
+      } catch(err) {
+        document.getElementById('error-text').textContent = err.message;
+        errorBanner.classList.add('show');
+        setBtnLoading(btn, false);
+        document.getElementById('password').classList.add('is-invalid');
+        // Shake animation
+        document.querySelector('.login-container').style.animation = 'none';
+        setTimeout(() => document.querySelector('.login-container').style.animation = '', 100);
+      }
+    });
+
+    // Email validation on blur
+    document.getElementById('email').addEventListener('blur', function() {
+      if (this.value && !validateEmail(this.value)) {
+        this.classList.add('is-invalid');
+      } else if (this.value) {
+        this.classList.add('is-valid');
+        this.classList.remove('is-invalid');
+      }
+    });
+
+    // Add ripple to btn
+    document.querySelectorAll('.btn').forEach(addRipple);
+
+    // ── Forgot Password ────────────────────────────
+    document.querySelector('.forgot-link').addEventListener('click', function(e) {
+      e.preventDefault();
+      openForgotModal();
+    });
+
+    let forgotEmail = '';
+
+    function openForgotModal() {
+      document.getElementById('forgot-step1').style.display = 'block';
+      document.getElementById('forgot-step2').style.display = 'none';
+      document.getElementById('forgot-email').value = document.getElementById('email').value || '';
+      document.getElementById('forgot-error').classList.remove('show');
+      document.getElementById('forgot-modal-overlay').classList.add('show');
+      setTimeout(() => document.getElementById('forgot-email').focus(), 50);
+    }
+
+    function closeForgotModal() {
+      document.getElementById('forgot-modal-overlay').classList.remove('show');
+    }
+
+    document.getElementById('forgot-modal-overlay').addEventListener('click', function(e) {
+      if (e.target === this) closeForgotModal();
+    });
+
+    document.getElementById('forgot-modal-overlay').addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeForgotModal();
+    });
+
+    async function sendResetCode() {
+      const email = document.getElementById('forgot-email').value.trim();
+      const errEl = document.getElementById('forgot-error');
+      if (!email || !validateEmail(email)) {
+        errEl.textContent = 'Please enter a valid email address.';
+        errEl.classList.add('show'); return;
+      }
+      errEl.classList.remove('show');
+      const btn = document.getElementById('forgot-send-btn');
+      setBtnLoading(btn, true);
+      try {
+        await API.request('POST', '/auth/forgot-password', { email });
+        forgotEmail = email;
+        document.getElementById('forgot-step2-hint').textContent = `A 6-digit code was sent to ${email}.`;
+        document.getElementById('forgot-step1').style.display = 'none';
+        document.getElementById('forgot-step2').style.display = 'block';
+        setTimeout(() => document.getElementById('forgot-code').focus(), 50);
+      } catch(err) {
+        errEl.textContent = err.message || 'Failed to send code. Please try again.';
+        errEl.classList.add('show');
+      } finally { setBtnLoading(btn, false); }
+    }
+
+    async function confirmReset() {
+      const code   = document.getElementById('forgot-code').value.trim();
+      const newPw  = document.getElementById('forgot-newpw').value;
+      const errEl  = document.getElementById('forgot-error2');
+      if (!code || code.length < 6) { errEl.textContent = 'Enter the 6-digit code.'; errEl.style.display = 'block'; return; }
+      if (!newPw || newPw.length < 8 || !/[A-Z]/.test(newPw) || !/[0-9]/.test(newPw) || !/[^A-Za-z0-9]/.test(newPw)) {
+        errEl.textContent = 'Password must be 8+ characters with at least one uppercase letter, one number, and one special character.';
+        errEl.style.display = 'block'; return;
+      }
+      errEl.style.display = 'none';
+      const btn = document.getElementById('forgot-confirm-btn');
+      setBtnLoading(btn, true);
+      try {
+        await API.request('POST', '/auth/reset-password', { email: forgotEmail, code, new_password: newPw });
+        closeForgotModal();
+        notify('success', 'Password Reset', 'Your password has been updated. Please sign in.');
+        document.getElementById('email').value = forgotEmail;
+        document.getElementById('password').value = '';
+        document.getElementById('password').focus();
+      } catch(err) {
+        errEl.textContent = err.message || 'Reset failed. Please check the code and try again.';
+        errEl.style.display = 'block';
+      } finally { setBtnLoading(btn, false); }
+    }
+  </script>
+</body>
+</html>

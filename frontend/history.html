@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta name="description" content="FuelGO — Digital fuel payment platform for petrol stations">
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <title>FuelGO – Transaction History</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    .txn-mobile-card {
+      background: white; border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 16px; margin-bottom: 12px; transition: all var(--transition);
+    }
+    .txn-mobile-card:hover { border-color: var(--primary-light); box-shadow: var(--shadow-sm); }
+    .txn-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .txn-station { font-weight: 700; font-size: 0.95rem; }
+    .txn-amount { font-weight: 800; font-family: 'Syne', sans-serif; font-size: 1.1rem; color: var(--primary); }
+    .txn-meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.82rem; color: var(--text-secondary); }
+    .txn-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+    .table-desktop { display: none; }
+    .cards-mobile { display: block; }
+    @media (min-width: 768px) { .table-desktop { display: block; } .cards-mobile { display: none; } }
+    .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    @media (min-width: 600px) { .filter-row { grid-template-columns: repeat(4, 1fr); } }
+    .export-bar { display: flex; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <a href="dashboard.html" class="sidebar-logo">
+        <div class="sidebar-logo-icon"><i class="fa-solid fa-gas-pump"></i></div>
+        <img src="assets/logo.svg" alt="FuelGO" style="height:36px;width:auto">
+      </a>
+      <nav class="sidebar-nav" id="sidebar-nav"></nav>
+      <div class="sidebar-user">
+        <div class="avatar avatar-md avatar-primary" id="user-avatar">JM</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="user-name">Loading…</div>
+          <div class="sidebar-user-role" id="user-role">Customer</div>
+        </div>
+        <button class="sidebar-logout" data-logout><i class="fa-solid fa-right-from-bracket"></i></button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-content" style="animation:slideUp 0.4s ease both">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title"><i class="fa-regular fa-clipboard"></i> Transaction History</h1>
+            <p class="page-subtitle">View all your fuel purchases</p>
+          </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="stats-grid" style="margin-bottom:24px">
+          <div class="stat-card stat-card-primary">
+            <div class="stat-card-label">Total Transactions</div>
+            <div class="stat-card-value" id="stat-total">—</div>
+          </div>
+          <div class="stat-card stat-card-accent">
+            <div class="stat-card-label">Total Spent</div>
+            <div class="stat-card-value" id="stat-spent">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Total Litres</div>
+            <div class="stat-card-value" id="stat-litres">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Avg per Fill-up</div>
+            <div class="stat-card-value" id="stat-avg">—</div>
+          </div>
+        </div>
+
+        <!-- Search + Filters -->
+        <div class="card" style="margin-bottom:20px;padding:20px">
+          <div class="search-bar" style="margin-bottom:16px">
+            <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <input type="text" id="filter-search" placeholder="Search station, vehicle, fuel type…" oninput="applyFilters()">
+          </div>
+          <div class="filter-row">
+            <div>
+              <label class="form-label">From Date</label>
+              <input type="date" id="filter-from" class="form-control" onchange="applyFilters()">
+            </div>
+            <div>
+              <label class="form-label">To Date</label>
+              <input type="date" id="filter-to" class="form-control" onchange="applyFilters()">
+            </div>
+            <div>
+              <label class="form-label">Vehicle</label>
+              <select class="form-select" id="filter-vehicle" onchange="applyFilters()">
+                <option value="">All Vehicles</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Fuel Type</label>
+              <select class="form-select" id="filter-fuel" onchange="applyFilters()">
+                <option value="">All Types</option>
+                <option value="Petrol">Petrol</option>
+                <option value="Diesel">Diesel</option>
+                <option value="Premium">Premium</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-outline-primary btn-sm" onclick="resetFilters()"><i class="fa-solid fa-arrows-rotate"></i> Reset</button>
+            <button class="btn btn-success btn-sm" onclick="exportData()"><i class="fa-solid fa-file-arrow-down"></i> Export CSV</button>
+            <span class="text-muted" style="font-size:0.85rem;line-height:32px" id="filter-count"></span>
+          </div>
+        </div>
+
+        <!-- Desktop Table -->
+        <div class="table-desktop">
+          <div class="table-wrapper">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Station</th>
+                  <th>Vehicle</th>
+                  <th>Fuel Type</th>
+                  <th>Litres</th>
+                  <th>Amount</th>
+                  <th>Points</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="txn-table-body">
+                <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-secondary)"><div class="spinner" style="margin:0 auto"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Mobile Cards -->
+        <div class="cards-mobile" id="txn-cards">
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card" style="margin-top:12px"></div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </main>
+  </div>
+
+  <nav class="bottom-nav" id="bottom-nav"></nav>
+
+  <!-- Back to top -->
+  <button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top"
+    style="display:none;position:fixed;bottom:80px;right:20px;z-index:900;width:44px;height:44px;border-radius:50%;background:var(--primary);color:white;border:none;cursor:pointer;box-shadow:var(--shadow-md);font-size:18px;transition:all 0.2s">
+    <i class="fa-solid fa-arrow-up"></i>
+  </button>
+
+  <script src="js/loader.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    const user = initAppFrame();
+    let allTxns = [], filteredTxns = [];
+    let page = 1, perPage = 10;
+
+    async function loadHistory() {
+      try {
+        allTxns = await API.transactions.getAll();
+        // Populate vehicle filter
+        const vehicles = await API.vehicles.getAll();
+        const vSel = document.getElementById('filter-vehicle');
+        vehicles.forEach(v => { const o = document.createElement('option'); o.value = v.vehicle_id; o.textContent = `${v.plate_number}`; vSel.appendChild(o); });
+        // Check URL param
+        const params = new URLSearchParams(window.location.search);
+        const vId = params.get('vehicle');
+        if (vId) { document.getElementById('filter-vehicle').value = vId; }
+        applyFilters();
+        hidePageLoader();
+      } catch(e) {
+        hidePageLoader();
+        const errHtml = `<div class="empty-state" style="padding:40px 0">
+          <div class="empty-state-icon" style="color:var(--danger)"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <p class="empty-state-title">Could not load history</p>
+          <p class="empty-state-text">${e.message || 'Something went wrong.'}</p>
+          <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="loadHistory()"><i class="fa-solid fa-rotate-right"></i> Retry</button>
+        </div>`;
+        document.getElementById('txn-table-body').innerHTML = `<tr><td colspan="9">${errHtml}</td></tr>`;
+        document.getElementById('txn-cards').innerHTML = errHtml;
+      }
+    }
+
+    function applyFilters() {
+      const from = document.getElementById('filter-from').value;
+      const to = document.getElementById('filter-to').value;
+      const vehicle = document.getElementById('filter-vehicle').value;
+      const fuel = document.getElementById('filter-fuel').value;
+      const q = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
+      filteredTxns = allTxns.filter(t => {
+        const d = new Date(t.transaction_date);
+        if (from && d < new Date(from)) return false;
+        if (to && d > new Date(to + 'T23:59:59')) return false;
+        if (vehicle && t.vehicle_id != vehicle) return false;
+        if (fuel && t.fuel_name !== fuel) return false;
+        if (q && !`${t.station_name} ${t.plate_number} ${t.fuel_name}`.toLowerCase().includes(q)) return false;
+        return true;
+      });
+      page = 1;
+      updateStats();
+      renderTable();
+    }
+
+    function updateStats() {
+      const total = filteredTxns.reduce((s, t) => s + parseFloat(t.total_amount), 0);
+      const litres = filteredTxns.reduce((s, t) => s + parseFloat(t.litres), 0);
+      const avg = filteredTxns.length > 0 ? total / filteredTxns.length : 0;
+      document.getElementById('stat-total').textContent = filteredTxns.length;
+      document.getElementById('stat-spent').textContent = formatCurrency(total);
+      document.getElementById('stat-litres').textContent = litres.toFixed(1) + ' L';
+      document.getElementById('stat-avg').textContent = filteredTxns.length > 0 ? formatCurrency(avg) : '—';
+      document.getElementById('filter-count').textContent = `Showing ${filteredTxns.length} transaction${filteredTxns.length !== 1 ? 's' : ''}`;
+    }
+
+    function renderTable() {
+      const fuelEmoji = { Petrol:'<i class="fa-solid fa-gas-pump"></i>', Diesel:'<i class="fa-solid fa-oil-can"></i>', Premium:'<i class="fa-solid fa-gem"></i>' };
+      const start = (page - 1) * perPage;
+      const paged = filteredTxns.slice(start, start + perPage);
+
+      if (!paged.length) {
+        const isNewUser = allTxns.length === 0;
+        const empty = isNewUser
+          ? `<div class="empty-state">
+               <div class="empty-state-icon" style="font-size:2.5rem"><i class="fa-solid fa-gas-pump"></i></div>
+               <p class="empty-state-title">No fill-ups yet</p>
+               <p class="empty-state-text">Your transaction history will appear here after your first fuel purchase.</p>
+               <a href="pump.html" class="btn btn-primary btn-sm" style="margin-top:12px"><i class="fa-solid fa-bolt"></i> Pay at Pump</a>
+             </div>`
+          : `<div class="empty-state">
+               <div class="empty-state-icon"><i class="fa-regular fa-clipboard"></i></div>
+               <p class="empty-state-title">No transactions match</p>
+               <p class="empty-state-text">Try adjusting your filters or date range.</p>
+               <button class="btn btn-outline-primary btn-sm" style="margin-top:12px" onclick="resetFilters()"><i class="fa-solid fa-arrows-rotate"></i> Reset Filters</button>
+             </div>`;
+        document.getElementById('txn-table-body').innerHTML = `<tr><td colspan="9">${empty}</td></tr>`;
+        document.getElementById('txn-cards').innerHTML = empty;
+        document.getElementById('pagination').innerHTML = '';
+        return;
+      }
+
+      // Desktop table
+      document.getElementById('txn-table-body').innerHTML = paged.map(t => `
+        <tr>
+          <td><span style="font-size:0.88rem">${formatDateTime(t.transaction_date)}</span></td>
+          <td><strong>${t.station_name||'—'}</strong></td>
+          <td><span class="font-mono" style="font-size:0.88rem">${t.plate_number||'—'}</span></td>
+          <td>${fuelEmoji[t.fuel_name]||''} ${t.fuel_name||'—'}</td>
+          <td>${formatLitres(t.litres)}</td>
+          <td><strong>${formatCurrency(t.total_amount)}</strong></td>
+          <td><span class="badge badge-success">+${t.points_earned||0} pts</span></td>
+          <td><span class="badge ${t.status==='completed'?'badge-success':'badge-danger'} badge-dot">${t.status||'—'}</span></td>
+          <td><a href="receipt.html?txn=${t.transaction_id}" class="btn btn-ghost btn-sm"><i class="fa-solid fa-receipt"></i></a></td>
+        </tr>
+      `).join('');
+
+      // Mobile cards
+      document.getElementById('txn-cards').innerHTML = paged.map(t => `
+        <div class="txn-mobile-card observe-animate">
+          <div class="txn-header">
+            <div>
+              <div class="txn-station"><i class="fa-solid fa-gas-pump"></i> ${t.station_name||'Station'}</div>
+              <div style="font-size:0.8rem;color:var(--text-secondary)">${formatDate(t.transaction_date)}</div>
+            </div>
+            <div class="txn-amount">${formatCurrency(t.total_amount)}</div>
+          </div>
+          <div class="txn-meta">
+            <span><i class="fa-solid fa-car"></i> ${t.plate_number||'—'}</span>
+            <span>${fuelEmoji[t.fuel_name]||''} ${t.fuel_name||'—'}</span>
+            <span><i class="fa-solid fa-gas-pump"></i> ${formatLitres(t.litres)}</span>
+          </div>
+          <div class="txn-footer">
+            <span class="badge badge-success">+${t.points_earned||0} pts earned</span>
+            <a href="receipt.html?txn=${t.transaction_id}" class="btn btn-ghost btn-sm"><i class="fa-solid fa-receipt"></i> Receipt</a>
+          </div>
+        </div>
+      `).join('');
+
+      renderPagination();
+    }
+
+    function renderPagination() {
+      const total = Math.ceil(filteredTxns.length / perPage);
+      if (total <= 1) { document.getElementById('pagination').innerHTML = ''; return; }
+      let html = `<button class="page-btn" onclick="changePage(${page-1})" ${page===1?'disabled':''}>←</button>`;
+      for (let i = 1; i <= total; i++) {
+        if (i === 1 || i === total || (i >= page - 1 && i <= page + 1)) {
+          html += `<button class="page-btn ${i===page?'active':''}" onclick="changePage(${i})">${i}</button>`;
+        } else if (i === page - 2 || i === page + 2) {
+          html += `<span style="padding:0 4px">…</span>`;
+        }
+      }
+      html += `<button class="page-btn" onclick="changePage(${page+1})" ${page===total?'disabled':''}>→</button>`;
+      document.getElementById('pagination').innerHTML = html;
+    }
+
+    function changePage(p) { page = p; renderTable(); window.scrollTo(0, 0); }
+    function resetFilters() { document.getElementById('filter-from').value = ''; document.getElementById('filter-to').value = ''; document.getElementById('filter-vehicle').value = ''; document.getElementById('filter-fuel').value = ''; const s = document.getElementById('filter-search'); if (s) s.value = ''; applyFilters(); }
+    function exportData() { exportCSV(filteredTxns.map(t => ({ date: formatDateTime(t.transaction_date), station: t.station_name, vehicle: t.plate_number, fuel_type: t.fuel_name, litres: t.litres, amount: t.total_amount, points_earned: t.points_earned, payment_method: t.payment_method })), 'fuelgo-history.csv'); }
+
+    loadHistory();
+
+    // Back to top visibility
+    window.addEventListener('scroll', () => {
+      const btn = document.getElementById('back-to-top');
+      if (btn) btn.style.display = window.scrollY > 300 ? 'flex' : 'none';
+    });
+  </script>
+</body>
+</html>

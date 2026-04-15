@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta name="description" content="FuelGO — Digital fuel payment platform for petrol stations">
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <title>FuelGO – Receipt</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    body { background: var(--surface-alt); }
+    .receipt-page { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 32px 20px 80px; }
+    .receipt-wrapper { width: 100%; max-width: 460px; animation: slideUp 0.5s ease both; }
+    .receipt-paper {
+      background: white;
+      border-radius: 0;
+      padding: 0;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    }
+    .receipt-top {
+      background: var(--gradient-primary);
+      padding: 32px 36px 28px;
+      text-align: center;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+    .receipt-top::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at 80% 20%, rgba(249,115,22,0.3) 0%, transparent 60%);
+    }
+    .receipt-top-content { position: relative; z-index: 2; }
+    .receipt-logo { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; }
+    .receipt-logo span { color: var(--accent-light); }
+    .receipt-tagline { font-size: 0.8rem; opacity: 0.75; margin-top: 2px; }
+    .receipt-body { padding: 28px 36px; }
+    .receipt-number { text-align: center; margin-bottom: 24px; }
+    .receipt-num-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); }
+    .receipt-num-value { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-top: 4px; }
+    .receipt-dashed { border: none; border-top: 2px dashed var(--border); margin: 20px 0; }
+    .rrow { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; gap: 16px; }
+    .rrow .rl { font-size: 0.85rem; color: var(--text-secondary); flex-shrink: 0; }
+    .rrow .rv { font-size: 0.9rem; font-weight: 600; text-align: right; }
+    .rrow .rv.mono { font-family: 'JetBrains Mono', monospace; }
+    .receipt-total-row { display: flex; justify-content: space-between; align-items: center; background: var(--surface-alt); border-radius: var(--radius-sm); padding: 16px; margin: 8px 0 20px; }
+    .receipt-total-label { font-weight: 700; font-size: 1rem; }
+    .receipt-total-amount { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; color: var(--primary); }
+    .receipt-points { background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.2); border-radius: var(--radius-sm); padding: 14px 16px; text-align: center; margin-bottom: 20px; }
+    .receipt-points-earned { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: var(--accent-dark); }
+    .receipt-footer-strip {
+      background: var(--surface-alt);
+      padding: 20px 36px;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      border-top: 1px dashed var(--border);
+    }
+    .receipt-actions { display: flex; gap: 12px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+    .zig-top {
+      height: 20px;
+      background: white;
+      position: relative;
+    }
+    .zig-top::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 20px;
+      background: radial-gradient(circle at 10px 10px, var(--surface-alt) 8px, white 8px) repeat-x 0 0 / 20px 20px;
+    }
+    .zig-bottom {
+      height: 20px;
+      background: white;
+      position: relative;
+    }
+    .zig-bottom::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 20px;
+      background: radial-gradient(circle at 10px 0px, var(--surface-alt) 8px, white 8px) repeat-x 0 0 / 20px 20px;
+    }
+    @media print {
+      body { background: white; }
+      .receipt-actions, .mobile-header, .back-btn { display: none !important; }
+      .receipt-wrapper { max-width: 100%; }
+      .receipt-page { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="receipt-page">
+    <div class="receipt-wrapper">
+      <div style="margin-bottom:20px">
+        <a href="javascript:history.back()" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</a>
+      </div>
+
+      <div class="receipt-paper">
+        <div class="zig-top"></div>
+        <div class="receipt-top">
+          <div class="receipt-top-content">
+            <div class="receipt-logo">Fuel<span>GO</span></div>
+            <div class="receipt-tagline">Fuel Smarter. Pay Faster. Drive Further.</div>
+            <div style="margin-top:20px;background:rgba(255,255,255,0.15);border-radius:50%;width:64px;height:64px;display:flex;align-items:center;justify-content:center;margin-left:auto;margin-right:auto;font-size:32px;animation:scaleBounce 0.5s ease"><i class="fa-solid fa-circle-check"></i></div>
+            <div style="font-weight:700;font-size:1.1rem;margin-top:12px">Payment Confirmed</div>
+          </div>
+        </div>
+        <div class="zig-bottom"></div>
+
+        <div class="receipt-body">
+          <div class="receipt-number">
+            <div class="receipt-num-label">Receipt Number</div>
+            <div class="receipt-num-value" id="r-txn-id">TXN-——</div>
+          </div>
+          <div class="receipt-dashed"></div>
+
+          <div class="rrow">
+            <span class="rl"><i class="fa-regular fa-calendar-days"></i> Date & Time</span>
+            <span class="rv" id="r-date">—</span>
+          </div>
+          <div class="rrow">
+            <span class="rl"><i class="fa-solid fa-location-dot"></i> Station</span>
+            <span class="rv" id="r-station">—</span>
+          </div>
+          <div class="rrow">
+            <span class="rl"><i class="fa-solid fa-gas-pump"></i> Pump</span>
+            <span class="rv mono" id="r-pump">—</span>
+          </div>
+          <div class="rrow">
+            <span class="rl"><i class="fa-solid fa-car"></i> Vehicle</span>
+            <span class="rv mono" id="r-vehicle">—</span>
+          </div>
+
+          <div class="receipt-dashed"></div>
+
+          <div class="rrow">
+            <span class="rl">Fuel Type</span>
+            <span class="rv" id="r-fuel-type">—</span>
+          </div>
+          <div class="rrow">
+            <span class="rl">Price per Litre</span>
+            <span class="rv mono" id="r-price">—</span>
+          </div>
+          <div class="rrow">
+            <span class="rl">Litres Dispensed</span>
+            <span class="rv mono" id="r-litres">—</span>
+          </div>
+
+          <div class="receipt-total-row">
+            <div class="receipt-total-label">TOTAL AMOUNT</div>
+            <div class="receipt-total-amount" id="r-total">—</div>
+          </div>
+
+          <div class="rrow">
+            <span class="rl"><i class="fa-solid fa-credit-card"></i> Payment Method</span>
+            <span class="rv" id="r-payment">—</span>
+          </div>
+
+          <div class="receipt-dashed"></div>
+
+          <div class="receipt-points">
+            <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:4px"><i class="fa-solid fa-star"></i> Points Earned This Purchase</div>
+            <div class="receipt-points-earned" id="r-points">+0 pts</div>
+            <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">New Balance: <strong id="r-balance"></strong></div>
+          </div>
+
+          <!-- What3Words station address -->
+          <div id="r-w3w-block" style="display:none;background:rgba(229,57,53,0.06);border:1px solid rgba(229,57,53,0.2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
+            <img src="https://map.what3words.com/img/w3w-logo.svg" alt="///what3words" style="height:18px;flex-shrink:0" onerror="this.replaceWith('///')">
+            <div>
+              <div style="font-size:0.72rem;color:var(--text-secondary)">Station 3-word address</div>
+              <a id="r-w3w-link" href="#" target="_blank" rel="noopener" style="font-family:'JetBrains Mono',monospace;font-weight:700;color:#e53935;font-size:0.92rem;text-decoration:none">—</a>
+            </div>
+          </div>
+
+          <!-- QR Code -->
+          <div style="text-align:center;margin-bottom:16px">
+            <div id="r-qr" style="display:inline-block;padding:8px;background:white;border:1px solid var(--border);border-radius:8px"></div>
+            <div style="font-size:0.72rem;color:var(--text-secondary);margin-top:4px">Scan to verify receipt</div>
+          </div>
+
+          <div id="r-co2-block" style="display:none;background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.2);border-radius:var(--radius-sm);padding:12px 16px;text-align:center;margin-bottom:16px">
+            <div style="font-size:0.8rem;color:#16a34a;margin-bottom:2px"><i class="fa-solid fa-leaf"></i> Carbon Footprint This Fill <span id="r-co2-source" style="font-size:0.7rem;opacity:0.7"></span></div>
+            <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:#15803d" id="r-co2">—</div>
+            <div style="font-size:0.75rem;color:#4ade80;margin-top:2px">Consider offsetting with tree planting</div>
+          </div>
+        </div>
+
+        <div class="receipt-footer-strip">
+          <div>Thank you for choosing <strong>FuelGO</strong>! <i class="fa-solid fa-hands-praying"></i></div>
+          <div style="margin-top:6px">Keep this receipt for your records.</div>
+          <div style="margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--border)" id="r-barcode">||||||||||||||||||||||||||||||||||||||||||</div>
+        </div>
+      </div>
+
+      <div class="receipt-actions">
+        <button class="btn btn-primary" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button>
+        <button class="btn btn-outline-primary" onclick="downloadPDF()"><i class="fa-solid fa-file-arrow-down"></i> Download PDF</button>
+        <button class="btn btn-accent" id="share-btn" onclick="shareReceipt()" style="display:none"><i class="fa-solid fa-share-nodes"></i> Share</button>
+        <a href="history.html" class="btn btn-outline-primary"><i class="fa-regular fa-clipboard"></i> History</a>
+        <a href="dashboard.html" class="btn btn-ghost"><i class="fa-solid fa-house"></i> Home</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="js/loader.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    requireAuth();
+    const params = new URLSearchParams(window.location.search);
+    const txnId = params.get('txn');
+
+    async function loadReceipt() {
+      try {
+        let txn = null;
+        // API is source of truth — always try first when we have an ID
+        if (txnId) {
+          txn = await API.transactions.getById(txnId).catch(() => null);
+        }
+        // Fallback: localStorage (covers immediate post-payment redirect before server confirms)
+        if (!txn) {
+          const lastTxn = localStorage.getItem('fuelgo_last_txn');
+          if (lastTxn) {
+            const t = JSON.parse(lastTxn);
+            if (!txnId || t.transaction_id == txnId) txn = t;
+          }
+        }
+        if (!txn) {
+          // Show demo receipt
+          txn = {
+            transaction_id: 'DEMO-001',
+            transaction_date: new Date().toISOString(),
+            station_name: 'FuelGO Demo Station',
+            pump_number: 1,
+            plate_number: 'LM 1234',
+            vehicle_model: 'Toyota Corolla',
+            fuel_name: 'Petrol',
+            price_per_litre: 14.50,
+            litres: 40,
+            total_amount: 580.00,
+            payment_method: 'mobile_money',
+            points_earned: 58
+          };
+        }
+        const payLabels = { mobile_money: '<i class="fa-solid fa-mobile-screen"></i> Mobile Money', card: '<i class="fa-solid fa-credit-card"></i> Bank Card', wallet: '<i class="fa-solid fa-wallet"></i> Wallet' };
+        const fuelEmoji = { Petrol:'<i class="fa-solid fa-gas-pump"></i>', Diesel:'<i class="fa-solid fa-oil-can"></i>', Premium:'<i class="fa-solid fa-gem"></i>' };
+        document.getElementById('r-txn-id').textContent = `TXN-${String(txn.transaction_id).padStart(5,'0')}`;
+        document.getElementById('r-date').textContent = formatDateTime(txn.transaction_date);
+        document.getElementById('r-station').textContent = txn.station?.station_name || txn.station_name || '—';
+        document.getElementById('r-pump').textContent = `Pump #${txn.pump?.pump_number || txn.pump_number || '—'}`;
+        const plate = txn.vehicle?.plate_number || txn.plate_number || '—';
+        const model = txn.vehicle?.model || txn.vehicle_model || '';
+        document.getElementById('r-vehicle').textContent = model ? `${plate} (${model})` : plate;
+        const fuelName = txn.fuel_type?.fuel_name || txn.fuel_name || '—';
+        document.getElementById('r-fuel-type').innerHTML = `${fuelEmoji[fuelName]||'<i class="fa-solid fa-gas-pump"></i>'} ${fuelName}`;
+        document.getElementById('r-price').textContent = `M${(txn.fuel_type?.price_per_litre || txn.price_per_litre || 0).toFixed(2)}/L`;
+        document.getElementById('r-litres').textContent = `${parseFloat(txn.litres).toFixed(1)} L`;
+        document.getElementById('r-total').textContent = formatCurrency(txn.total_amount);
+        document.getElementById('r-payment').innerHTML = payLabels[txn.payment_method] || txn.payment_method || '—';
+        document.getElementById('r-points').textContent = `+${txn.points_earned || 0} pts`;
+        // Load loyalty balance — non-fatal if it fails
+        try {
+          const loyalty = await API.loyalty.get();
+          document.getElementById('r-balance').textContent = formatPoints(loyalty?.points_balance ?? 0);
+        } catch { document.getElementById('r-balance').textContent = '—'; }
+        document.getElementById('r-barcode').textContent = `TXN${String(txn.transaction_id).padStart(12,'0')}FGO`.split('').join('|');
+
+        // QR code
+        const qrData = `FUELGO:TXN-${txn.transaction_id}|M${parseFloat(txn.total_amount).toFixed(2)}|${txn.station_name||''}|${new Date(txn.transaction_date).toISOString()}`;
+        const qrEl = document.getElementById('r-qr');
+        if (qrEl && window.QRCode) {
+          new QRCode(qrEl, { text: qrData, width: 96, height: 96, colorDark:'#0f2548', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M });
+        }
+
+        // CO₂ — use real value from Carbon Interface (stored on transaction) or fallback formula
+        const litresVal = parseFloat(txn.litres) || 0;
+        if (litresVal > 0) {
+          let co2kg, co2Source;
+          if (txn.co2_kg !== null && txn.co2_kg !== undefined) {
+            co2kg     = parseFloat(txn.co2_kg).toFixed(2);
+            co2Source = '(Carbon Interface)';
+          } else {
+            const co2Factors = { Petrol: 2.31, Diesel: 2.68, Premium: 2.33, LPG: 1.61, Paraffin: 2.52 };
+            const fuelN = txn.fuel_type?.fuel_name || txn.fuel_name || 'Petrol';
+            co2kg     = (litresVal * (co2Factors[fuelN] || 2.31)).toFixed(2);
+            co2Source = '(estimate)';
+          }
+          document.getElementById('r-co2').textContent = `${co2kg} kg CO₂`;
+          document.getElementById('r-co2-source').textContent = co2Source;
+          document.getElementById('r-co2-block').style.display = 'block';
+        }
+
+        // W3W — fetch station detail to get w3w address
+        const stationId = txn.station?.station_id || txn.station_id;
+        if (stationId) {
+          API.stations.getById(stationId).then(s => {
+            if (s?.w3w) {
+              const block = document.getElementById('r-w3w-block');
+              const link  = document.getElementById('r-w3w-link');
+              link.textContent = `///${s.w3w}`;
+              link.href = `https://what3words.com/${s.w3w}`;
+              block.style.display = 'flex';
+            }
+          }).catch(() => {});
+        }
+        hidePageLoader();
+      } catch(e) {
+        hidePageLoader();
+        showToast('Could not load receipt', 'warning');
+      }
+    }
+    loadReceipt();
+
+    async function shareReceipt() {
+      const total = document.getElementById('r-total').textContent;
+      const station = document.getElementById('r-station').textContent;
+      const date = document.getElementById('r-date').textContent;
+      const text = `FuelGO Receipt\n${station}\n${date}\nTotal: ${total}\n\nPowered by FuelGO ⛽`;
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: 'FuelGO Receipt', text });
+        } else {
+          await navigator.clipboard.writeText(text);
+          showToast('Receipt copied to clipboard', 'success');
+        }
+      } catch {}
+    }
+
+    // Show share button if supported
+    if (navigator.share || navigator.clipboard) {
+      document.getElementById('share-btn').style.display = 'inline-flex';
+    }
+    window.shareReceipt = shareReceipt;
+
+    function downloadPDF() {
+      const txnId = document.getElementById('r-txn-id')?.textContent || 'receipt';
+      // Set document title so browser names the PDF file
+      const origTitle = document.title;
+      document.title = `FuelGO-Receipt-${txnId.replace('#','')}`;
+      window.print();
+      document.title = origTitle;
+    }
+    window.downloadPDF = downloadPDF;
+  </script>
+</body>
+</html>

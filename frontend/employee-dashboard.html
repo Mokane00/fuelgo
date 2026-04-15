@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta name="description" content="FuelGO — Digital fuel payment platform for petrol stations">
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <title>FuelGO – Employee Dashboard</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .pump-status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+    .pump-status-card {
+      background: white; border: 2px solid var(--border); border-radius: var(--radius-md);
+      padding: 16px; text-align: center; transition: all var(--transition);
+    }
+    .pump-status-card.available { border-color: var(--success); background: var(--success-bg); }
+    .pump-status-card.in_use { border-color: var(--accent); background: rgba(249,115,22,0.05); animation: pulse 2s ease infinite; }
+    .pump-status-card.offline { border-color: var(--border); opacity: 0.5; }
+    .pump-num { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; }
+    .pump-status-text { font-size: 0.78rem; font-weight: 700; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .pump-status-card.available .pump-status-text { color: var(--success); }
+    .pump-status-card.in_use .pump-status-text { color: var(--accent-dark); }
+    .report-tabs { display: flex; gap: 4px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+    .report-tab { padding: 8px 18px; border-radius: var(--radius-full); font-size: 0.88rem; font-weight: 600; cursor: pointer; background: var(--surface-alt); color: var(--text-secondary); white-space: nowrap; border: none; transition: all var(--transition); }
+    .report-tab.active { background: var(--primary); color: white; }
+    .report-section { display: none; animation: slideUp 0.3s ease both; }
+    .report-section.active { display: block; }
+    .live-badge { background: var(--danger); color: white; border-radius: var(--radius-full); padding: 2px 10px; font-size: 0.72rem; font-weight: 700; animation: pulse 2s ease infinite; }
+    .chart-card { background: white; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; }
+    .emp-hero {
+      background-image: url("images.jpeg");
+      background-size: cover; background-position: center;
+      border-radius: var(--radius-lg); padding: 28px; position: relative; overflow: hidden; margin-bottom: 24px;
+    }
+    .emp-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(15,37,72,0.92) 0%, rgba(26,60,110,0.8) 100%); border-radius: inherit; }
+    .emp-hero-content { position: relative; z-index: 2; color: white; }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <a href="employee-dashboard.html" class="sidebar-logo">
+        <div class="sidebar-logo-icon"><i class="fa-solid fa-gas-pump"></i></div>
+        <img src="assets/logo.svg" alt="FuelGO" style="height:36px;width:auto">
+      </a>
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <a href="employee-dashboard.html" class="sidebar-link active"><span class="link-icon"><i class="fa-solid fa-house"></i></span> Dashboard</a>
+        <a href="#pumps" class="sidebar-link"><span class="link-icon"><i class="fa-solid fa-gas-pump"></i></span> Pump Status</a>
+        <a href="#reports" class="sidebar-link"><span class="link-icon"><i class="fa-solid fa-chart-bar"></i></span> Reports</a>
+        <a href="history.html" class="sidebar-link"><span class="link-icon"><i class="fa-regular fa-clipboard"></i></span> Transactions</a>
+      </nav>
+      <div class="sidebar-user">
+        <div class="avatar avatar-md avatar-accent" id="user-avatar">SN</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="user-name">Loading…</div>
+          <div class="sidebar-user-role" id="user-role">Employee</div>
+        </div>
+        <button class="sidebar-logout" data-logout><i class="fa-solid fa-right-from-bracket"></i></button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-content" style="animation:slideUp 0.4s ease both">
+
+        <!-- Hero -->
+        <div class="emp-hero">
+          <div class="emp-hero-content" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px">
+            <div>
+              <div style="font-size:0.85rem;opacity:0.7;margin-bottom:4px">Employee Dashboard</div>
+              <h1 style="font-size:1.8rem;font-weight:800" id="emp-greeting">Welcome!</h1>
+              <p style="opacity:0.8;font-size:0.9rem;margin-top:4px" id="emp-station">Station loading…</p>
+            </div>
+            <div style="text-align:right;opacity:0.85">
+              <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;opacity:0.7;margin-bottom:4px"><i class="fa-regular fa-clock"></i> Current Time</div>
+              <div id="live-clock" style="font-family:'JetBrains Mono',monospace;font-size:1.05rem;font-weight:700;white-space:nowrap">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today Stats -->
+        <div class="grid-4" style="margin-bottom:28px;grid-template-columns:repeat(2,1fr)" id="today-stats">
+          <div class="kpi-card" style="background:var(--gradient-primary)">
+            <div class="kpi-value" id="kpi-txns">—</div>
+            <div class="kpi-label">Transactions Today</div>
+            <div class="kpi-icon"><i class="fa-regular fa-clipboard"></i></div>
+          </div>
+          <div class="kpi-card" style="background:var(--gradient-accent)">
+            <div class="kpi-value" id="kpi-revenue">—</div>
+            <div class="kpi-label">Revenue Today</div>
+            <div class="kpi-icon"><i class="fa-solid fa-coins"></i></div>
+          </div>
+          <div class="kpi-card" style="background:linear-gradient(135deg,#22c55e,#16a34a)">
+            <div class="kpi-value" id="kpi-pumps">—</div>
+            <div class="kpi-label">Available Pumps</div>
+            <div class="kpi-icon"><i class="fa-solid fa-gas-pump"></i></div>
+          </div>
+          <div class="kpi-card" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)">
+            <div class="kpi-value" id="kpi-litres">—</div>
+            <div class="kpi-label">Litres Today</div>
+            <div class="kpi-icon"><i class="fa-solid fa-chart-bar"></i></div>
+          </div>
+        </div>
+
+        <!-- Pump Status -->
+        <div class="card" style="margin-bottom:24px" id="pumps">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Live Pump Status</div>
+              <div class="card-subtitle">Real-time pump availability at your station</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span class="live-badge">● LIVE</span>
+              <button class="btn btn-ghost btn-sm" onclick="loadPumps()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+            </div>
+          </div>
+          <div class="pump-status-grid" id="pump-status-grid">
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>
+          </div>
+        </div>
+
+        <!-- Today's Transactions -->
+        <div class="card" style="margin-bottom:24px">
+          <div class="card-header">
+            <div class="card-title">Today's Transactions</div>
+            <button class="btn btn-ghost btn-sm" onclick="exportCSV(todayTxns, 'today-transactions.csv')"><i class="fa-solid fa-file-arrow-down"></i> Export</button>
+          </div>
+          <div class="table-wrapper">
+            <table class="table">
+              <thead>
+                <tr><th>Time</th><th>Vehicle</th><th>Fuel Type</th><th>Litres</th><th>Amount</th><th>Status</th></tr>
+              </thead>
+              <tbody id="today-txn-body">
+                <tr><td colspan="6" style="text-align:center;padding:30px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Reports -->
+        <div class="card" id="reports">
+          <div class="card-header"><div class="card-title"><i class="fa-solid fa-chart-bar"></i> Station Reports</div></div>
+          <div class="report-tabs">
+            <button class="report-tab active" onclick="showReport('sales')">Total Sales</button>
+            <button class="report-tab" onclick="showReport('fuel')">By Fuel Type</button>
+            <button class="report-tab" onclick="showReport('vehicles')">Vehicle Usage</button>
+          </div>
+
+          <!-- Sales Report -->
+          <div class="report-section active" id="report-sales">
+            <div class="grid-3" style="margin-bottom:20px">
+              <div class="stat-card">
+                <div class="stat-card-label">Total Transactions</div>
+                <div class="stat-card-value" id="rep-total-txns">—</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-label">Total Revenue</div>
+                <div class="stat-card-value" id="rep-total-rev">—</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-label">Total Litres</div>
+                <div class="stat-card-value" id="rep-total-litres">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fuel Type Report -->
+          <div class="report-section" id="report-fuel">
+            <div class="chart-card">
+              <canvas id="fuel-chart" height="120"></canvas>
+            </div>
+          </div>
+
+          <!-- Vehicle Usage -->
+          <div class="report-section" id="report-vehicles">
+            <div class="table-wrapper">
+              <table class="table">
+                <thead>
+                  <tr><th>Plate</th><th>Model</th><th>Customer</th><th>Transactions</th><th>Total Litres</th><th>Total Spent</th></tr>
+                </thead>
+                <tbody id="vehicle-usage-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <nav class="bottom-nav" id="bottom-nav"></nav>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/loader.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    const user = initAppFrame('employee');
+    let todayTxns = [];
+    let fuelChart = null;
+
+    // ── Real-time clock ──────────────────────────────
+    function updateClock() {
+      const now = new Date();
+      const d = now.toLocaleDateString('en-GB', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+      const t = now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+      const el = document.getElementById('live-clock');
+      if (el) el.textContent = `${d} — ${t}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ── Pump renderer ────────────────────────────────
+    function renderPumps(pumps) {
+      document.getElementById('kpi-pumps').textContent = pumps.filter(p => p.status === 'available').length;
+      document.getElementById('pump-status-grid').innerHTML = pumps.map(p => `
+        <div class="pump-status-card ${p.status}" id="pump-card-${p.pump_id}">
+          <div class="pump-status-icon" style="font-size:20px;margin-bottom:4px">
+            ${p.status === 'available'
+              ? '<i class="fa-solid fa-circle-check" style="color:var(--success)"></i>'
+              : p.status === 'in_use'
+              ? '<i class="fa-solid fa-circle-exclamation" style="color:var(--accent)"></i>'
+              : '<i class="fa-solid fa-circle-xmark" style="color:var(--danger)"></i>'}
+          </div>
+          <div class="pump-num">${p.pump_number}</div>
+          <div class="pump-status-text">${p.status.replace('_',' ')}</div>
+        </div>
+      `).join('') || '<p class="text-muted">No pumps found</p>';
+    }
+
+    // ── Main dashboard load ──────────────────────────
+    async function loadDashboard() {
+      try {
+        const data = await API.employee.dashboard();
+        const { station, today, pumps, recent_transactions } = data;
+        todayTxns = recent_transactions || [];
+
+        // Greeting + station
+        const firstName = (user?.full_name || '').split(' ')[0] || 'there';
+        document.getElementById('emp-greeting').textContent = `${getGreeting()}, ${firstName}!`;
+        document.getElementById('emp-station').textContent = station
+          ? `${station.station_name} · ${station.location}`
+          : 'Station not assigned';
+
+        // KPIs
+        document.getElementById('kpi-txns').textContent = today.txns || 0;
+        document.getElementById('kpi-revenue').textContent = formatCurrency(today.revenue || 0);
+        document.getElementById('kpi-litres').textContent = parseFloat(today.litres || 0).toFixed(0) + 'L';
+
+        // Pumps
+        renderPumps(pumps || []);
+
+        // Today's transactions table
+        const fuelEmoji = { Petrol:'<i class="fa-solid fa-gas-pump"></i>', Diesel:'<i class="fa-solid fa-oil-can"></i>', Premium:'<i class="fa-solid fa-gem"></i>' };
+        document.getElementById('today-txn-body').innerHTML = todayTxns.length
+          ? todayTxns.map(t => `
+            <tr>
+              <td class="font-mono" style="font-size:0.85rem">${formatDateTime(t.transaction_date)}</td>
+              <td><strong class="font-mono">${t.plate_number || '—'}</strong></td>
+              <td>${fuelEmoji[t.fuel_name] || ''} ${t.fuel_name || '—'}</td>
+              <td>${parseFloat(t.litres || 0).toFixed(1)} L</td>
+              <td><strong>${formatCurrency(t.total_amount)}</strong></td>
+              <td><span class="badge badge-success badge-dot">Confirmed</span></td>
+            </tr>`).join('')
+          : '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-secondary)">No transactions yet today</td></tr>';
+
+        // Reports from transactions data
+        const total  = todayTxns.reduce((s, t) => s + parseFloat(t.total_amount || 0), 0);
+        const litres = todayTxns.reduce((s, t) => s + parseFloat(t.litres || 0), 0);
+        document.getElementById('rep-total-txns').textContent = todayTxns.length;
+        document.getElementById('rep-total-rev').textContent = formatCurrency(total);
+        document.getElementById('rep-total-litres').textContent = litres.toFixed(1) + ' L';
+
+        // Fuel chart — aggregate from recent_transactions
+        const fuelMap = {};
+        todayTxns.forEach(t => {
+          const k = t.fuel_name || 'Unknown';
+          if (!fuelMap[k]) fuelMap[k] = { revenue: 0, litres: 0 };
+          fuelMap[k].revenue += parseFloat(t.total_amount || 0);
+          fuelMap[k].litres  += parseFloat(t.litres || 0);
+        });
+        const fuelLabels = Object.keys(fuelMap);
+        if (fuelChart) fuelChart.destroy();
+        const ctx = document.getElementById('fuel-chart').getContext('2d');
+        fuelChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: fuelLabels,
+            datasets: [
+              { label: 'Revenue (M)', data: fuelLabels.map(l => fuelMap[l].revenue), backgroundColor: ['rgba(249,115,22,0.7)','rgba(26,60,110,0.7)','rgba(139,92,246,0.7)'], borderRadius: 8 },
+              { label: 'Litres',      data: fuelLabels.map(l => fuelMap[l].litres),  backgroundColor: ['rgba(249,115,22,0.3)','rgba(26,60,110,0.3)','rgba(139,92,246,0.3)'], borderRadius: 8 }
+            ]
+          },
+          options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+        });
+
+        // Vehicle usage — aggregate from recent_transactions
+        const vehicleMap = {};
+        todayTxns.forEach(t => {
+          const key = t.plate_number || '—';
+          if (!vehicleMap[key]) vehicleMap[key] = { plate: key, model: t.vehicle_model || '—', customer: t.customer_name || '—', txns: 0, litres: 0, spent: 0 };
+          vehicleMap[key].txns++;
+          vehicleMap[key].litres += parseFloat(t.litres || 0);
+          vehicleMap[key].spent  += parseFloat(t.total_amount || 0);
+        });
+        const vehicles = Object.values(vehicleMap).sort((a, b) => b.spent - a.spent);
+        document.getElementById('vehicle-usage-body').innerHTML = vehicles.length
+          ? vehicles.map(v => `
+            <tr>
+              <td class="font-mono font-bold">${v.plate}</td>
+              <td>${v.model}</td>
+              <td>${v.customer}</td>
+              <td>${v.txns}</td>
+              <td>${v.litres.toFixed(1)} L</td>
+              <td><strong>${formatCurrency(v.spent)}</strong></td>
+            </tr>`).join('')
+          : '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-secondary)">No vehicle data available</td></tr>';
+
+        hidePageLoader();
+      } catch(e) {
+        hidePageLoader();
+        showToast('Failed to load dashboard', 'danger');
+      }
+    }
+
+    async function loadPumps() {
+      try {
+        const data = await API.employee.dashboard();
+        if (data.pumps) renderPumps(data.pumps);
+      } catch(e) { /* silent refresh failure */ }
+    }
+
+    function showReport(type) {
+      document.querySelectorAll('.report-tab').forEach((t, i) => t.classList.toggle('active', ['sales','fuel','vehicles'][i] === type));
+      document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
+      document.getElementById(`report-${type}`).classList.add('active');
+    }
+
+    loadDashboard().then(() => {
+      // After dashboard loads, join the station room for real-time pump updates
+      try {
+        const socket = io('http://localhost:5001');
+        const stationId = user?.station_id;
+        if (stationId) {
+          socket.emit('join_station', stationId);
+          socket.on('pump_status', ({ pump_id, pump_number, status }) => {
+            // Update just the affected pump card instantly — no full reload needed
+            const card = document.getElementById(`pump-card-${pump_id}`);
+            if (card) {
+              card.className = `pump-status-card ${status}`;
+              card.querySelector('.pump-status-icon').innerHTML = status === 'available'
+                ? '<i class="fa-solid fa-circle-check" style="color:var(--success)"></i>'
+                : status === 'in_use'
+                ? '<i class="fa-solid fa-circle-exclamation" style="color:var(--accent)"></i>'
+                : '<i class="fa-solid fa-circle-xmark" style="color:var(--danger)"></i>';
+              card.querySelector('.pump-status-text').textContent = status.replace('_', ' ');
+            }
+            // Recount available pumps
+            const available = document.querySelectorAll('.pump-status-card.available').length;
+            const kpi = document.getElementById('kpi-pumps');
+            if (kpi) kpi.textContent = available;
+          });
+          socket.on('disconnect', () => {
+            // Fall back to 30s polling if socket disconnects
+            setInterval(loadPumps, 30000);
+          });
+        }
+      } catch(e) {
+        // Socket.io not available — fall back to polling
+        setInterval(loadPumps, 30000);
+      }
+    });
+  </script>
+</body>
+</html>
