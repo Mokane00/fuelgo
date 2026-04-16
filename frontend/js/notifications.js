@@ -607,10 +607,24 @@
   }
 
   // ─── Sound ───────────────────────────────────────────
+  // Shared AudioContext — created once, unlocked on first user gesture
+  let _audioCtx = null;
+  function _getAudioCtx() {
+    if (!_audioCtx) {
+      try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch { return null; }
+      // Unlock on first user interaction so async callbacks (geolocation, etc.) can play sound
+      const unlock = () => { _audioCtx?.resume(); document.removeEventListener('click', unlock); document.removeEventListener('keydown', unlock); };
+      document.addEventListener('click', unlock, { once: true });
+      document.addEventListener('keydown', unlock, { once: true });
+    }
+    return _audioCtx;
+  }
+
   function playSound() {
     if (getSettings().soundOff) return;
     try {
-      const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = _getAudioCtx();
+      if (!ctx || ctx.state === 'suspended') return; // not yet unlocked by user gesture
       const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain); gain.connect(ctx.destination);
@@ -619,7 +633,7 @@
       osc.frequency.setValueAtTime(1180, ctx.currentTime + 0.07);
       gain.gain.setValueAtTime(0.14, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
-      ctx.resume().then(() => { osc.start(); osc.stop(ctx.currentTime + 0.28); });
+      osc.start(); osc.stop(ctx.currentTime + 0.28);
     } catch {}
   }
 
