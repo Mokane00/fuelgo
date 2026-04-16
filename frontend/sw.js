@@ -1,24 +1,11 @@
-// FuelGO Service Worker — v2.3
-// Strategies: static → cache-first | dynamic → stale-while-revalidate | API → network-only
-const CACHE_VERSION = 'fuelgo-v5';
+// FuelGO Service Worker — v2.4
+// Strategies: HTML → network-first | CSS/JS/assets → cache-first | API/external → network-only
+const CACHE_VERSION = 'fuelgo-v6';
 const STATIC_CACHE  = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 
+// Only cache static assets — never HTML (HTML changes break CSP headers + content)
 const STATIC_ASSETS = [
-  '/index.html',
-  '/dashboard.html',
-  '/stations.html',
-  '/history.html',
-  '/loyalty.html',
-  '/pump.html',
-  '/vehicles.html',
-  '/profile.html',
-  '/analytics.html',
-  '/register.html',
-  '/receipt.html',
-  '/admin-dashboard.html',
-  '/employee-dashboard.html',
-  '/offline.html',
   '/css/global.css',
   '/css/components.css',
   '/css/layout.css',
@@ -30,6 +17,7 @@ const STATIC_ASSETS = [
   '/js/modal.js',
   '/assets/logo.svg',
   '/manifest.json',
+  '/offline.html',
 ];
 
 // ── Install: pre-cache static assets ───────────────
@@ -37,18 +25,18 @@ self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(STATIC_CACHE)
       .then(c => c.addAll(STATIC_ASSETS.map(u => new Request(u, { cache: 'reload' }))))
-      .catch(() => {}) // Non-fatal: some resources may not exist yet
+      .catch(() => {})
   );
   self.skipWaiting();
 });
 
-// ── Activate: clean up old caches ──────────────────
+// ── Activate: clean up ALL old caches ──────────────
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
         keys
-          .filter(k => k.startsWith('fuelgo-') && k !== STATIC_CACHE && k !== DYNAMIC_CACHE)
+          .filter(k => k !== STATIC_CACHE && k !== DYNAMIC_CACHE)
           .map(k => caches.delete(k))
       )
     )
@@ -60,50 +48,49 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // 1. API calls (backend): network-only, no caching
+  // 1. API calls: network-only
   if (url.pathname.startsWith('/api/')) {
-    return; // Let browser handle — no respondWith
+    return;
   }
 
-  // 2. External resources (Google Maps, CDNs, Cloudinary): network-only
+  // 2. External resources (CDNs, Google, etc.): network-only
   if (url.hostname !== location.hostname) {
     return;
   }
 
-  // 3. Navigate requests (HTML pages): network-first with offline fallback
-  if (e.request.mode === 'navigate') {
+  // 3. HTML pages: network-first, offline fallback only (never serve stale HTML)
+  if (e.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/') {
     e.respondWith(
       fetch(e.request).catch(() =>
-        caches.match(e.request).then(cached => cached || caches.match('/offline.html'))
+        caches.match('/offline.html')
       )
     );
     return;
   }
 
-  // 4. Static assets (CSS, JS, fonts, images): cache-first, then network
+  // 4. Static assets (CSS, JS, fonts, images): cache-first, background refresh
   if (
-    url.pathname.endsWith('.css') ||
-    url.pathname.endsWith('.js')  ||
-    url.pathname.endsWith('.svg') ||
-    url.pathname.endsWith('.png') ||
-    url.pathname.endsWith('.jpg') ||
-    url.pathname.endsWith('.webp')||
-    url.pathname.endsWith('.ico') ||
+    url.pathname.endsWith('.css')  ||
+    url.pathname.endsWith('.js')   ||
+    url.pathname.endsWith('.svg')  ||
+    url.pathname.endsWith('.png')  ||
+    url.pathname.endsWith('.jpg')  ||
+    url.pathname.endsWith('.webp') ||
+    url.pathname.endsWith('.ico')  ||
     url.pathname.includes('/assets/')
   ) {
     e.respondWith(
       caches.match(e.request).then(cached => {
-        if (cached) {
-          // Serve cached, refresh in background
-          fetch(e.request).then(res => {
-            if (res && res.ok) caches.open(STATIC_CACHE).then(c => c.put(e.request, res));
-          }).catch(() => {});
-          return cached;
-        }
-        return fetch(e.request).then(res => {
-          if (res && res.ok) caches.open(STATIC_CACHE).then(c => c.put(e.request, res.clone()));
+        // Background refresh
+        const networkFetch = fetch(e.request).then(res => {
+          if (res && res.ok) {
+            const clone = res.clone(); // clone BEFORE any async op
+            caches.open(STATIC_CACHE).then(c => c.put(e.request, clone));
+          }
           return res;
-        });
+        }).catch(() => null);
+
+        return cached || networkFetch;
       })
     );
     return;
@@ -113,7 +100,10 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     caches.match(e.request).then(cached => {
       const fresh = fetch(e.request).then(res => {
-        if (res && res.ok) caches.open(DYNAMIC_CACHE).then(c => c.put(e.request, res.clone()));
+        if (res && res.ok) {
+          const clone = res.clone();
+          caches.open(DYNAMIC_CACHE).then(c => c.put(e.request, clone));
+        }
         return res;
       }).catch(() => cached);
       return cached || fresh;
@@ -121,7 +111,7 @@ self.addEventListener('fetch', e => {
   );
 });
 
-// ── Message handler (for cache busting from app) ───
+// ── Message handler ─────────────────────────────────
 self.addEventListener('message', e => {
   if (e.data?.type === 'CLEAR_CACHE') {
     caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
