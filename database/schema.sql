@@ -169,3 +169,27 @@ CREATE TABLE IF NOT EXISTS user_favourites (
 ALTER TABLE vehicles    ADD COLUMN IF NOT EXISTS tank_size   DECIMAL(5,1)  DEFAULT NULL;
 ALTER TABLE users       ADD COLUMN IF NOT EXISTS fuel_budget DECIMAL(10,2) DEFAULT NULL;
 ALTER TABLE transactions ADD COLUMN IF NOT EXISTS co2_kg     DECIMAL(8,4)  DEFAULT NULL;
+
+-- ── Performance Indexes ────────────────────────
+-- Core query paths for optimized lookups and JOIN performance
+CREATE INDEX IF NOT EXISTS idx_users_email        ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role         ON users(role);
+CREATE INDEX IF NOT EXISTS idx_txn_fuel           ON transactions(fuel_type_id);
+CREATE INDEX IF NOT EXISTS idx_txn_vehicle        ON transactions(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_txn_amount         ON transactions(total_amount);
+CREATE INDEX IF NOT EXISTS idx_txn_date_station   ON transactions(transaction_date, station_id);
+CREATE INDEX IF NOT EXISTS idx_vehicles_user      ON vehicles(user_id);
+CREATE INDEX IF NOT EXISTS idx_vehicles_fuel      ON vehicles(fuel_type_id);
+CREATE INDEX IF NOT EXISTS idx_loyalty_user       ON loyalty(user_id);
+CREATE INDEX IF NOT EXISTS idx_loyalty_tier       ON loyalty(tier);
+CREATE INDEX IF NOT EXISTS idx_loyalty_txn_user   ON loyalty_transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_loyalty_txn_type   ON loyalty_transactions(type);
+CREATE INDEX IF NOT EXISTS idx_pumps_fuel         ON pumps(fuel_type_id);
+CREATE INDEX IF NOT EXISTS idx_pumps_status       ON pumps(status);
+CREATE INDEX IF NOT EXISTS idx_stations_district  ON stations(district);
+CREATE INDEX IF NOT EXISTS idx_stations_status    ON stations(status);
+CREATE INDEX IF NOT EXISTS idx_price_alerts_user  ON price_alerts(user_id);
+CREATE INDEX IF NOT EXISTS idx_price_alerts_fuel  ON price_alerts(fuel_type_id);
+CREATE INDEX IF NOT EXISTS idx_ratings_station    ON station_ratings(station_id);
+CREATE INDEX IF NOT EXISTS idx_ratings_user       ON station_ratings(user_id);
+CREATE INDEX IF NOT EXISTS idx_favourites_user    ON user_favourites(user_id);

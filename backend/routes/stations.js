@@ -181,4 +181,14 @@ router.post('/', authMW(['admin']), async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── DELETE /api/stations/:id  (admin) ────────────
+router.delete('/:id', authMW(['admin']), async (req, res) => {
+  try {
+    const [r] = await db.query('DELETE FROM stations WHERE station_id = ?', [req.params.id]);
+    if (r.affectedRows === 0) return res.status(404).json({ error: 'Station not found' });
+    cache.invalidatePrefix('stations:');
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

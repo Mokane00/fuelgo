@@ -145,8 +145,25 @@
         <!-- ─── STATIONS ─── -->
         <div class="admin-panel" id="panel-stations">
           <div class="page-header">
-            <div><h1 class="page-title"><i class="fa-solid fa-store"></i> Stations</h1><p class="page-subtitle">Manage all FuelGO stations</p></div>
-            <button class="btn btn-accent" onclick="openStationModal()">+ Add Station</button>
+            <div><h1 class="page-title"><i class="fa-solid fa-store"></i> Stations</h1><p class="page-subtitle">Manage all FuelGO petrol stations</p></div>
+            <button class="btn btn-accent" onclick="openStationModal()"><i class="fa-solid fa-plus"></i> Add Station</button>
+          </div>
+          <!-- Search / Find bar -->
+          <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center">
+            <div style="position:relative;flex:1;max-width:360px">
+              <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.85rem"></i>
+              <input type="text" id="station-search-input" class="form-control"
+                style="padding-left:32px;font-size:0.85rem"
+                placeholder="Search station name, district or location…"
+                oninput="searchStations()">
+            </div>
+            <button class="btn btn-accent btn-sm" onclick="searchStations()">
+              <i class="fa-solid fa-search"></i> Find
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('station-search-input').value='';searchStations()">
+              Clear
+            </button>
+            <span id="station-search-count" style="font-size:0.8rem;color:var(--text-muted)"></span>
           </div>
           <div class="table-wrapper">
             <table class="table">
@@ -207,20 +224,32 @@
 
         <!-- ─── REPORTS ─── -->
         <div class="admin-panel" id="panel-reports">
-          <div class="page-header"><div><h1 class="page-title"><i class="fa-solid fa-chart-line"></i> Reports</h1><p class="page-subtitle">System-wide analytics and reports</p></div></div>
-          <div class="grid-2" style="margin-bottom:24px">
-            <div class="card">
-              <div class="card-header"><div class="card-title">Sales Per Station</div><button class="btn btn-ghost btn-sm" id="export-station-sales"><i class="fa-solid fa-file-arrow-down"></i> CSV</button></div>
-              <div id="station-sales-content"></div>
-            </div>
-            <div class="card">
-              <div class="card-header"><div class="card-title">Sales Per Employee</div></div>
-              <div id="employee-sales-content"></div>
-            </div>
+          <div class="page-header">
+            <div><h1 class="page-title"><i class="fa-solid fa-chart-bar"></i> Reports</h1>
+              <p class="page-subtitle">5 multi-table business intelligence reports</p></div>
+            <a href="reports.html" class="btn btn-accent"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full Reports</a>
           </div>
-          <div class="card">
-            <div class="card-header"><div class="card-title">Fuel Type Performance</div></div>
-            <canvas id="report-fuel-chart" height="80"></canvas>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:8px">
+            <a href="reports.html#revenue" class="card" style="text-decoration:none;display:flex;gap:14px;align-items:center;padding:18px 20px">
+              <div style="width:44px;height:44px;background:var(--accent-bg,#fff7ed);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:1.2rem;flex-shrink:0"><i class="fa-solid fa-building"></i></div>
+              <div><div style="font-weight:700;font-size:0.92rem">Revenue by Station</div><div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px">transactions JOIN stations</div></div>
+            </a>
+            <a href="reports.html#fuel" class="card" style="text-decoration:none;display:flex;gap:14px;align-items:center;padding:18px 20px">
+              <div style="width:44px;height:44px;background:var(--primary-bg,#eff6ff);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:1.2rem;flex-shrink:0"><i class="fa-solid fa-gas-pump"></i></div>
+              <div><div style="font-weight:700;font-size:0.92rem">Fuel Performance</div><div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px">transactions JOIN fuel_types</div></div>
+            </a>
+            <a href="reports.html#loyalty" class="card" style="text-decoration:none;display:flex;gap:14px;align-items:center;padding:18px 20px">
+              <div style="width:44px;height:44px;background:#fefce8;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#ca8a04;font-size:1.2rem;flex-shrink:0"><i class="fa-solid fa-star"></i></div>
+              <div><div style="font-weight:700;font-size:0.92rem">Customer Loyalty</div><div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px">users JOIN loyalty JOIN transactions</div></div>
+            </a>
+            <a href="reports.html#ratings" class="card" style="text-decoration:none;display:flex;gap:14px;align-items:center;padding:18px 20px">
+              <div style="width:44px;height:44px;background:#f0fdf4;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#16a34a;font-size:1.2rem;flex-shrink:0"><i class="fa-regular fa-star-half-stroke"></i></div>
+              <div><div style="font-weight:700;font-size:0.92rem">Station Ratings</div><div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px">stations JOIN station_ratings</div></div>
+            </a>
+            <a href="reports.html#transactions" class="card" style="text-decoration:none;display:flex;gap:14px;align-items:center;padding:18px 20px">
+              <div style="width:44px;height:44px;background:#fdf4ff;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#9333ea;font-size:1.2rem;flex-shrink:0"><i class="fa-solid fa-receipt"></i></div>
+              <div><div style="font-weight:700;font-size:0.92rem">Transaction Detail</div><div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px">5 tables joined, date filter</div></div>
+            </a>
           </div>
         </div>
 
@@ -409,17 +438,42 @@
     async function loadStations() {
       try {
         allStations = await API.admin.stations();
-        document.getElementById('stations-table-body').innerHTML = allStations.map(s => `
-          <tr>
-            <td><strong>${s.station_name}</strong><br><small style="color:var(--text-secondary)">${s.district || ''}</small></td>
-            <td><i class="fa-solid fa-location-dot"></i> ${s.location || '—'}</td>
-            <td>${s.contact_number || '—'}</td>
-            <td><span class="badge badge-primary">${s.pump_count ?? 0} pumps</span></td>
-            <td><span class="badge ${s.status==='active'||s.status==='open'?'badge-success':'badge-danger'} badge-dot">${s.status}</span></td>
-            <td><button class="btn btn-ghost btn-sm" onclick="editStation(${s.station_id})"><i class="fa-solid fa-pen-to-square"></i> Edit</button></td>
-          </tr>
-        `).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px">No stations found</td></tr>';
+        renderStationsTable(allStations);
       } catch(e) { showToast('Failed to load stations', 'danger'); }
+    }
+
+    function renderStationsTable(data) {
+      document.getElementById('stations-table-body').innerHTML = data.map(s => `
+        <tr data-station-search="${(s.station_name+' '+s.district+' '+s.location).toLowerCase()}">
+          <td><strong>${s.station_name}</strong><br><small style="color:var(--text-secondary)">${s.district || ''}</small></td>
+          <td><i class="fa-solid fa-location-dot"></i> ${s.location || '—'}</td>
+          <td>${s.contact_number || '—'}</td>
+          <td><span class="badge badge-primary">${s.pump_count ?? 0} pumps</span></td>
+          <td><span class="badge ${s.status==='active'||s.status==='open'?'badge-success':'badge-danger'} badge-dot">${s.status}</span></td>
+          <td style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm" onclick="editStation(${s.station_id})">
+              <i class="fa-solid fa-pen-to-square"></i> Edit
+            </button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--danger)"
+              onclick="deleteStation(${s.station_id},'${s.station_name.replace(/'/g,"\\'")}')">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        </tr>`
+      ).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px">No stations found</td></tr>';
+    }
+
+    function searchStations() {
+      const q   = document.getElementById('station-search-input').value.toLowerCase();
+      const rows = document.querySelectorAll('#stations-table-body tr[data-station-search]');
+      let vis = 0;
+      rows.forEach(tr => {
+        const show = !q || tr.dataset.stationSearch.includes(q);
+        tr.style.display = show ? '' : 'none';
+        if (show) vis++;
+      });
+      const countEl = document.getElementById('station-search-count');
+      if (countEl) countEl.textContent = q ? `${vis} of ${rows.length} stations` : '';
     }
 
     function openStationModal(station = null) {
@@ -438,6 +492,20 @@
       const s = allStations.find(s => s.station_id === id);
       if (s) openStationModal(s);
     }
+
+    async function deleteStation(id, name) {
+      if (!confirm(`Delete station "${name}"?\n\nThis will remove the station and all associated pumps.`)) return;
+      try {
+        await API.admin.deleteStation(id);
+        showToast(`Station "${name}" deleted`, 'success');
+        loadStations();
+      } catch(e) { showToast(e.message || 'Could not delete station', 'danger'); }
+    }
+    window.deleteStation    = deleteStation;
+    window.searchStations   = searchStations;
+    window.openStationModal = openStationModal;
+    window.editStation      = editStation;
+    window.saveStation      = saveStation;
 
     async function saveStation() {
       const id   = document.getElementById('st-id').value;

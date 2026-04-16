@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <title>FuelGO – Documentation</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    /* ── Documentation Page Styles ── */
+    .doc-tabs { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:28px; }
+    .doc-tab  { padding:8px 18px; border-radius:var(--radius-full); font-size:0.85rem;
+                font-weight:600; cursor:pointer; border:2px solid var(--border);
+                background:var(--surface); color:var(--text-secondary); transition:all .2s; }
+    .doc-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+    .doc-panel { display:none; }
+    .doc-panel.active { display:block; }
+
+    /* ERD Diagram */
+    .erd-wrap { overflow-x:auto; padding:16px 0; }
+    .erd-grid { display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+    .erd-entity { background:var(--surface); border:2px solid var(--primary); border-radius:10px;
+                  min-width:220px; overflow:hidden; }
+    .erd-entity-header { background:var(--primary); color:white; padding:8px 14px;
+                          font-weight:800; font-size:0.88rem; display:flex;
+                          align-items:center; gap:7px; }
+    .erd-entity-header i { font-size:0.9rem; }
+    .erd-entity-fields { padding:4px 0; }
+    .erd-field { padding:5px 14px; font-size:0.79rem; display:flex; gap:8px; align-items:center;
+                  border-bottom:1px solid var(--border-light, var(--border)); }
+    .erd-field:last-child { border-bottom:none; }
+    .erd-pk  { color:var(--accent); font-weight:700; }
+    .erd-fk  { color:var(--primary); font-weight:600; }
+    .erd-field-name { font-family:monospace; flex:1; }
+    .erd-field-type { font-size:0.72rem; color:var(--text-muted); }
+    .erd-field-key  { font-size:0.68rem; background:var(--bg-secondary); padding:1px 5px;
+                       border-radius:4px; font-weight:700; }
+    .pk-badge { background:#FEF3C7; color:#92400E; }
+    .fk-badge { background:#EFF6FF; color:#1D4ED8; }
+
+    /* Business Rules table */
+    .br-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+    .br-table th { background:var(--primary); color:white; padding:10px 14px;
+                   text-align:left; font-weight:700; font-size:0.78rem; }
+    .br-table td { padding:9px 14px; border-bottom:1px solid var(--border); vertical-align:top; }
+    .br-table tr:last-child td { border-bottom:none; }
+    .br-table tr:hover td { background:var(--bg-secondary); }
+    .br-no   { font-weight:800; color:var(--primary); font-family:monospace; white-space:nowrap; }
+    .br-bi   { font-size:0.75rem; color:var(--text-muted); margin-top:3px; font-style:italic; }
+
+    /* User Manual sections */
+    .manual-section { margin-bottom:28px; }
+    .manual-section h3 { font-family:'Syne',sans-serif; font-size:1rem; font-weight:800;
+                          margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+    .manual-steps { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; }
+    .manual-steps li { display:flex; gap:12px; align-items:flex-start; padding:10px 14px;
+                        background:var(--bg-secondary); border-radius:10px; font-size:0.87rem; }
+    .manual-step-num { width:24px; height:24px; border-radius:50%; background:var(--primary);
+                        color:white; display:flex; align-items:center; justify-content:center;
+                        font-size:0.75rem; font-weight:800; flex-shrink:0; margin-top:1px; }
+    .tip-box { background:#EFF6FF; border-left:3px solid var(--primary); border-radius:0 8px 8px 0;
+                padding:10px 14px; font-size:0.84rem; margin:10px 0; }
+    .warn-box { background:#FEF9EC; border-left:3px solid #F59E0B; border-radius:0 8px 8px 0;
+                 padding:10px 14px; font-size:0.84rem; margin:10px 0; }
+
+    @media print {
+      .sidebar, .bottom-nav, .doc-tabs, .page-header .btn { display:none !important; }
+      .doc-panel { display:block !important; }
+      body, .main-content, .page-content { background:white !important; padding:0 !important; }
+      @page { margin:15mm; size:A4 portrait; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <a href="dashboard.html" class="sidebar-logo">
+        <div class="sidebar-logo-icon"><i class="fa-solid fa-gas-pump"></i></div>
+        <img src="assets/logo.svg" alt="FuelGO" style="height:36px;width:auto">
+      </a>
+      <nav class="sidebar-nav" id="sidebar-nav"></nav>
+      <div class="sidebar-user">
+        <div class="avatar avatar-md avatar-primary" id="user-avatar">?</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="user-name">Loading…</div>
+          <div class="sidebar-user-role" id="user-role">—</div>
+        </div>
+        <button class="sidebar-logout" title="Sign out" data-logout><i class="fa-solid fa-right-from-bracket"></i></button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-content" style="animation:slideUp 0.4s ease both;max-width:1100px">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title"><i class="fa-solid fa-book-open" style="color:var(--primary)"></i> Documentation</h1>
+            <p class="page-subtitle">CS 3432 Mini-Project — FuelGO Petrol Station Application</p>
+          </div>
+          <button class="btn btn-outline-primary btn-sm" onclick="window.print()">
+            <i class="fa-solid fa-print"></i> Print
+          </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="doc-tabs" role="tablist">
+          <button class="doc-tab active" onclick="switchDoc('business',this)"><i class="fa-solid fa-briefcase"></i> Business Case</button>
+          <button class="doc-tab" onclick="switchDoc('erd',this)"><i class="fa-solid fa-diagram-project"></i> ERD Diagram</button>
+          <button class="doc-tab" onclick="switchDoc('rules',this)"><i class="fa-solid fa-list-check"></i> Business Rules</button>
+          <button class="doc-tab" onclick="switchDoc('manual',this)"><i class="fa-regular fa-circle-user"></i> User Manual</button>
+          <button class="doc-tab" onclick="switchDoc('install',this)"><i class="fa-solid fa-gear"></i> Installation</button>
+        </div>
+
+        <!-- ══ PANEL 1: Business Case ══ -->
+        <div class="doc-panel active" id="doc-business">
+          <div class="card" style="margin-bottom:20px">
+            <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-secondary);margin-bottom:14px">Project Overview</div>
+            <h2 style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;margin-bottom:10px">
+              FuelGO — Digital Fuel Payment Platform for Lesotho
+            </h2>
+            <p style="font-size:0.9rem;color:var(--text-secondary);line-height:1.7;margin-bottom:16px">
+              FuelGO is a full-stack petrol station service application designed to digitalise fuel transactions
+              across Lesotho. The system enables customers to locate nearby petrol stations, pay for fuel
+              digitally, earn loyalty rewards, and track spending — while giving station employees and
+              administrators real-time operational control.
+            </p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:8px">
+              <div style="padding:14px;background:var(--bg-secondary);border-radius:10px">
+                <div style="font-size:0.75rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">Course</div>
+                <div style="font-weight:700">CS 3432 — Principles of Database Design &amp; Management</div>
+              </div>
+              <div style="padding:14px;background:var(--bg-secondary);border-radius:10px">
+                <div style="font-size:0.75rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">Institution</div>
+                <div style="font-weight:700">National University of Lesotho</div>
+              </div>
+              <div style="padding:14px;background:var(--bg-secondary);border-radius:10px">
+                <div style="font-size:0.75rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">Project Type</div>
+                <div style="font-weight:700">Petrol Station Service Mobile App (Option c)</div>
+              </div>
+              <div style="padding:14px;background:var(--bg-secondary);border-radius:10px">
+                <div style="font-size:0.75rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">DBMS</div>
+                <div style="font-weight:700">MySQL 8.0 with Node.js/Express backend</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:20px">
+            <div style="font-weight:800;margin-bottom:14px">Problem Definition</div>
+            <p style="font-size:0.88rem;color:var(--text-secondary);line-height:1.7">
+              Lesotho's petrol stations operate primarily with cash and manual record-keeping, leading to:
+              long queues, inaccurate stock tracking, no customer loyalty programs, and limited business
+              intelligence for station owners. FuelGO digitises the entire transaction lifecycle — from
+              station discovery to digital payment, loyalty rewards, and management reporting.
+            </p>
+          </div>
+
+          <div class="card">
+            <div style="font-weight:800;margin-bottom:14px">Key Entities &amp; Stakeholders</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">
+              <div style="padding:14px;background:var(--bg-secondary);border-radius:10px">
+                <div style="font-weight:700;margin-bottom:6px"><i class="fa-regular fa-circle-user" style="color:var(--primary)"></i> Customer</div>
+                <div style="font-size:0.82rem;color:var(--text-secondary)">Registers, finds stations, pays digitally, earns loyalty points, manages vehicles, sets price alerts.</div>
+              </div>
+              <div style="padding:14px;background:var(--bg-secondary);border-radius:10px">
+                <div style="font-weight:700;margin-bottom:6px"><i class="fa-solid fa-user-tie" style="color:var(--primary)"></i> Employee</div>
+                <div style="font-size:0.82rem;color:var(--text-secondary)">Monitors pumps at assigned station, manages pump status, views daily transactions and revenue.</div>
+              </div>
+              <div style="padding:14px;background:var(--bg-secondary);border-radius:10px">
+                <div style="font-weight:700;margin-bottom:6px"><i class="fa-solid fa-user-shield" style="color:var(--primary)"></i> Administrator</div>
+                <div style="font-size:0.82rem;color:var(--text-secondary)">Full system access — manages stations, employees, fuel prices, customers and business reports.</div>
+              </div>
+              <div style="padding:14px;background:var(--bg-secondary);border-radius:10px">
+                <div style="font-weight:700;margin-bottom:6px"><i class="fa-solid fa-store" style="color:var(--accent)"></i> Station</div>
+                <div style="font-size:0.82rem;color:var(--text-secondary)">Physical petrol station with pumps, fuel types, location, operating hours and contact info.</div>
+              </div>
+              <div style="padding:14px;background:var(--bg-secondary);border-radius:10px">
+                <div style="font-weight:700;margin-bottom:6px"><i class="fa-solid fa-receipt" style="color:var(--accent)"></i> Transaction</div>
+                <div style="font-size:0.82rem;color:var(--text-secondary)">Records each fuel purchase — customer, station, pump, fuel type, litres, amount, payment method.</div>
+              </div>
+              <div style="padding:14px;background:var(--bg-secondary);border-radius:10px">
+                <div style="font-weight:700;margin-bottom:6px"><i class="fa-solid fa-star" style="color:#F59E0B"></i> Loyalty</div>
+                <div style="font-size:0.82rem;color:var(--text-secondary)">Customer loyalty programme — Bronze/Silver/Gold/Platinum tiers, points earned per transaction.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ PANEL 2: ERD ══ -->
+        <div class="doc-panel" id="doc-erd">
+          <div class="card" style="margin-bottom:16px">
+            <div style="font-weight:800;margin-bottom:4px"><i class="fa-solid fa-diagram-project" style="color:var(--primary)"></i> Entity Relationship Diagram</div>
+            <div style="font-size:0.82rem;color:var(--text-secondary)">Extended ERD — FuelGO database (MySQL). PK = Primary Key, FK = Foreign Key, AK = Unique Alternate Key.</div>
+          </div>
+          <div class="erd-wrap">
+            <div class="erd-grid">
+
+              <!-- USERS -->
+              <div class="erd-entity">
+                <div class="erd-entity-header"><i class="fa-regular fa-circle-user"></i> users</div>
+                <div class="erd-entity-fields">
+                  <div class="erd-field"><span class="erd-field-key pk-badge">PK</span><span class="erd-field-name erd-pk">user_id</span><span class="erd-field-type">INT AUTO_INCREMENT</span></div>
+                  <div class="erd-field"><span class="erd-field-key" style="background:#f0fdf4;color:#166534">AK</span><span class="erd-field-name">email</span><span class="erd-field-type">VARCHAR(100) UNIQUE</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">full_name</span><span class="erd-field-type">VARCHAR(100)</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">phone</span><span class="erd-field-type">VARCHAR(25)</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">password_hash</span><span class="erd-field-type">VARCHAR(255)</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">role</span><span class="erd-field-type">ENUM(customer,employee,admin)</span></div>
+                  <div class="erd-field"><span class="erd-field-key fk-badge">FK</span><span class="erd-field-name erd-fk">station_id</span><span class="erd-field-type">→ stations</span></div>
+                </div>
+              </div>
+
+              <!-- STATIONS -->
+              <div class="erd-entity">
+                <div class="erd-entity-header"><i class="fa-solid fa-store"></i> stations</div>
+                <div class="erd-entity-fields">
+                  <div class="erd-field"><span class="erd-field-key pk-badge">PK</span><span class="erd-field-name erd-pk">station_id</span><span class="erd-field-type">INT AUTO_INCREMENT</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">station_name</span><span class="erd-field-type">VARCHAR(100)</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">location</span><span class="erd-field-type">VARCHAR(200)</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">district</span><span class="erd-field-type">VARCHAR(100)</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">latitude / longitude</span><span class="erd-field-type">DECIMAL(9,6)</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">status</span><span class="erd-field-type">ENUM(active,inactive)</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">opening_hours</span><span class="erd-field-type">VARCHAR(50)</span></div>
+                </div>
+              </div>
+
+              <!-- FUEL_TYPES -->
+              <div class="erd-entity">
+                <div class="erd-entity-header"><i class="fa-solid fa-gas-pump"></i> fuel_types</div>
+                <div class="erd-entity-fields">
+                  <div class="erd-field"><span class="erd-field-key pk-badge">PK</span><span class="erd-field-name erd-pk">fuel_type_id</span><span class="erd-field-type">INT AUTO_INCREMENT</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">fuel_name</span><span class="erd-field-type">VARCHAR(50) UNIQUE</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">price_per_litre</span><span class="erd-field-type">DECIMAL(8,2)</span></div>
+                </div>
+              </div>
+
+              <!-- PUMPS -->
+              <div class="erd-entity">
+                <div class="erd-entity-header"><i class="fa-solid fa-plug"></i> pumps</div>
+                <div class="erd-entity-fields">
+                  <div class="erd-field"><span class="erd-field-key pk-badge">PK</span><span class="erd-field-name erd-pk">pump_id</span><span class="erd-field-type">INT AUTO_INCREMENT</span></div>
+                  <div class="erd-field"><span class="erd-field-key fk-badge">FK</span><span class="erd-field-name erd-fk">station_id</span><span class="erd-field-type">→ stations</span></div>
+                  <div class="erd-field"><span class="erd-field-key fk-badge">FK</span><span class="erd-field-name erd-fk">fuel_type_id</span><span class="erd-field-type">→ fuel_types</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">pump_number</span><span class="erd-field-type">INT</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">status</span><span class="erd-field-type">ENUM(available,in_use,maintenance)</span></div>
+                </div>
+              </div>
+
+              <!-- TRANSACTIONS -->
+              <div class="erd-entity" style="border-color:var(--accent)">
+                <div class="erd-entity-header" style="background:var(--accent)"><i class="fa-solid fa-receipt"></i> transactions</div>
+                <div class="erd-entity-fields">
+                  <div class="erd-field"><span class="erd-field-key pk-badge">PK</span><span class="erd-field-name erd-pk">transaction_id</span><span class="erd-field-type">INT AUTO_INCREMENT</span></div>
+                  <div class="erd-field"><span class="erd-field-key fk-badge">FK</span><span class="erd-field-name erd-fk">user_id</span><span class="erd-field-type">→ users</span></div>
+                  <div class="erd-field"><span class="erd-field-key fk-badge">FK</span><span class="erd-field-name erd-fk">station_id</span><span class="erd-field-type">→ stations</span></div>
+                  <div class="erd-field"><span class="erd-field-key fk-badge">FK</span><span class="erd-field-name erd-fk">fuel_type_id</span><span class="erd-field-type">→ fuel_types</span></div>
+                  <div class="erd-field"><span class="erd-field-key fk-badge">FK</span><span class="erd-field-name erd-fk">pump_id</span><span class="erd-field-type">→ pumps</span></div>
+                  <div class="erd-field"><span class="erd-field-key fk-badge">FK</span><span class="erd-field-name erd-fk">vehicle_id</span><span class="erd-field-type">→ vehicles</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">litres / price_per_litre</span><span class="erd-field-type">DECIMAL</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">total_amount</span><span class="erd-field-type">DECIMAL(10,2)</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">payment_method</span><span class="erd-field-type">ENUM(card,mobile_money,cash)</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">points_earned</span><span class="erd-field-type">INT</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">transaction_date</span><span class="erd-field-type">TIMESTAMP</span></div>
+                </div>
+              </div>
+
+              <!-- VEHICLES -->
+              <div class="erd-entity">
+                <div class="erd-entity-header"><i class="fa-solid fa-car"></i> vehicles</div>
+                <div class="erd-entity-fields">
+                  <div class="erd-field"><span class="erd-field-key pk-badge">PK</span><span class="erd-field-name erd-pk">vehicle_id</span><span class="erd-field-type">INT AUTO_INCREMENT</span></div>
+                  <div class="erd-field"><span class="erd-field-key fk-badge">FK</span><span class="erd-field-name erd-fk">user_id</span><span class="erd-field-type">→ users</span></div>
+                  <div class="erd-field"><span class="erd-field-key fk-badge">FK</span><span class="erd-field-name erd-fk">fuel_type_id</span><span class="erd-field-type">→ fuel_types</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">plate_number</span><span class="erd-field-type">VARCHAR(20)</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">make / model / year</span><span class="erd-field-type">VARCHAR / INT</span></div>
+                </div>
+              </div>
+
+              <!-- LOYALTY -->
+              <div class="erd-entity">
+                <div class="erd-entity-header"><i class="fa-solid fa-star"></i> loyalty</div>
+                <div class="erd-entity-fields">
+                  <div class="erd-field"><span class="erd-field-key pk-badge">PK</span><span class="erd-field-name erd-pk">loyalty_id</span><span class="erd-field-type">INT AUTO_INCREMENT</span></div>
+                  <div class="erd-field"><span class="erd-field-key fk-badge">FK</span><span class="erd-field-name erd-fk">user_id</span><span class="erd-field-type">→ users (UNIQUE)</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">points_balance</span><span class="erd-field-type">INT</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">tier</span><span class="erd-field-type">ENUM(Bronze,Silver,Gold,Platinum)</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">total_spent</span><span class="erd-field-type">DECIMAL(12,2)</span></div>
+                </div>
+              </div>
+
+              <!-- STATION_RATINGS -->
+              <div class="erd-entity">
+                <div class="erd-entity-header"><i class="fa-regular fa-star-half-stroke"></i> station_ratings</div>
+                <div class="erd-entity-fields">
+                  <div class="erd-field"><span class="erd-field-key pk-badge">PK</span><span class="erd-field-name erd-pk">rating_id</span><span class="erd-field-type">INT AUTO_INCREMENT</span></div>
+                  <div class="erd-field"><span class="erd-field-key fk-badge">FK</span><span class="erd-field-name erd-fk">user_id</span><span class="erd-field-type">→ users</span></div>
+                  <div class="erd-field"><span class="erd-field-key fk-badge">FK</span><span class="erd-field-name erd-fk">station_id</span><span class="erd-field-type">→ stations</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">rating</span><span class="erd-field-type">TINYINT (1–5)</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">comment</span><span class="erd-field-type">VARCHAR(500) NULL</span></div>
+                </div>
+              </div>
+
+              <!-- PRICE_ALERTS -->
+              <div class="erd-entity">
+                <div class="erd-entity-header"><i class="fa-solid fa-bell"></i> price_alerts</div>
+                <div class="erd-entity-fields">
+                  <div class="erd-field"><span class="erd-field-key pk-badge">PK</span><span class="erd-field-name erd-pk">alert_id</span><span class="erd-field-type">INT AUTO_INCREMENT</span></div>
+                  <div class="erd-field"><span class="erd-field-key fk-badge">FK</span><span class="erd-field-name erd-fk">user_id</span><span class="erd-field-type">→ users</span></div>
+                  <div class="erd-field"><span class="erd-field-key fk-badge">FK</span><span class="erd-field-name erd-fk">fuel_type_id</span><span class="erd-field-type">→ fuel_types</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">threshold_price</span><span class="erd-field-type">DECIMAL(8,2)</span></div>
+                  <div class="erd-field"><span style="width:28px"></span><span class="erd-field-name">is_active</span><span class="erd-field-type">TINYINT DEFAULT 1</span></div>
+                </div>
+              </div>
+
+            </div><!-- /erd-grid -->
+          </div>
+        </div>
+
+        <!-- ══ PANEL 3: Business Rules ══ -->
+        <div class="doc-panel" id="doc-rules">
+          <div class="card">
+            <div style="font-weight:800;font-size:1rem;margin-bottom:4px">Business Rules — FuelGO</div>
+            <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:20px">All rules are bi-directional as required. Direction: A ↔ B.</div>
+            <table class="br-table">
+              <thead><tr><th>Rule #</th><th>Entity A</th><th>Relationship</th><th>Entity B</th><th>Cardinality</th><th>Notes</th></tr></thead>
+              <tbody>
+                <tr><td class="br-no">BR-01</td><td>User</td><td>registers / is registered by</td><td>System</td><td>1 User per email (UNIQUE)</td><td>Password is bcrypt-hashed. Role = customer on register.</td></tr>
+                <tr><td class="br-no">BR-02</td><td>User (customer)</td><td>owns / is owned by</td><td>Vehicle</td><td>1 User : M Vehicles</td><td>A vehicle must belong to exactly one customer. A customer may own 0 or more vehicles.<div class="br-bi">↔ A vehicle must have one owner | A customer may have many vehicles</div></td></tr>
+                <tr><td class="br-no">BR-03</td><td>Station</td><td>has / belongs to</td><td>Pump</td><td>1 Station : M Pumps</td><td>A station must have at least one pump. A pump belongs to exactly one station.<div class="br-bi">↔ A pump is at one station | A station has one or more pumps</div></td></tr>
+                <tr><td class="br-no">BR-04</td><td>Pump</td><td>dispenses / is dispensed by</td><td>Fuel Type</td><td>M Pumps : 1 Fuel Type</td><td>Each pump dispenses one fuel type. A fuel type can be dispensed by many pumps.<div class="br-bi">↔ A pump has one fuel type | A fuel type can be on many pumps</div></td></tr>
+                <tr><td class="br-no">BR-05</td><td>Transaction</td><td>involves / is performed at</td><td>Station</td><td>M Transactions : 1 Station</td><td>Every transaction must reference one station. A station can have many transactions.<div class="br-bi">↔ A transaction happens at one station | A station processes many transactions</div></td></tr>
+                <tr><td class="br-no">BR-06</td><td>Transaction</td><td>is made by / makes</td><td>User (customer)</td><td>M Transactions : 1 User</td><td>A transaction must be associated with one customer. A customer may make many transactions.</td></tr>
+                <tr><td class="br-no">BR-07</td><td>Transaction</td><td>earns / is earned from</td><td>Loyalty Points</td><td>1 Transaction : M Points</td><td>Each transaction earns points based on amount (1 pt per M 1 spent). Points update customer tier.</td></tr>
+                <tr><td class="br-no">BR-08</td><td>User (customer)</td><td>has / belongs to</td><td>Loyalty Account</td><td>1 User : 1 Loyalty</td><td>Each customer has exactly one loyalty account created on registration.<div class="br-bi">↔ A loyalty account belongs to one customer</div></td></tr>
+                <tr><td class="br-no">BR-09</td><td>User</td><td>rates / is rated by</td><td>Station</td><td>M Users : M Stations</td><td>A user can rate each station at most once (UNIQUE constraint). A station can have many ratings.<div class="br-bi">↔ A station has many ratings | A user can rate many stations</div></td></tr>
+                <tr><td class="br-no">BR-10</td><td>User (admin)</td><td>manages / is managed by</td><td>Station</td><td>1 Admin : M Stations</td><td>Admins can create, update and delete stations. A station exists in the system independently of admin.</td></tr>
+                <tr><td class="br-no">BR-11</td><td>User (employee)</td><td>is assigned to / employs</td><td>Station</td><td>M Employees : 1 Station</td><td>An employee is assigned to one station at a time. A station can have many employees.<div class="br-bi">↔ An employee belongs to one station | A station employs many people</div></td></tr>
+                <tr><td class="br-no">BR-12</td><td>User</td><td>creates / is triggered by</td><td>Price Alert</td><td>1 User : M Alerts (max 5)</td><td>A customer can set up to 5 active price alerts. Each alert watches one fuel type at one threshold.</td></tr>
+                <tr><td class="br-no">BR-13</td><td>User</td><td>saves / is saved by</td><td>Station (Favourite)</td><td>M Users : M Stations</td><td>A user can save many stations. A station can be saved by many users (UNIQUE per user-station pair).</td></tr>
+                <tr><td class="br-no">BR-14</td><td>Transaction</td><td>uses / is used in</td><td>Pump</td><td>M Transactions : 1 Pump</td><td>A transaction optionally references a specific pump. A pump can be referenced in many transactions.</td></tr>
+                <tr><td class="br-no">BR-15</td><td>Transaction</td><td>involves / is recorded for</td><td>Vehicle</td><td>M Transactions : 1 Vehicle</td><td>A transaction optionally references the customer's vehicle. A vehicle can appear in many transactions.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ══ PANEL 4: User Manual ══ -->
+        <div class="doc-panel" id="doc-manual">
+          <div class="card" style="margin-bottom:20px">
+            <div style="font-weight:800;font-size:1rem;margin-bottom:18px"><i class="fa-regular fa-circle-user" style="color:var(--primary)"></i> Customer Guide</div>
+
+            <div class="manual-section">
+              <h3><i class="fa-solid fa-user-plus" style="color:var(--primary)"></i> Getting Started</h3>
+              <ol class="manual-steps">
+                <li><span class="manual-step-num">1</span><div>Open FuelGO in your browser. On the login page, click <strong>Create Account</strong>.</div></li>
+                <li><span class="manual-step-num">2</span><div>Fill in your <strong>full name</strong>, <strong>email address</strong>, <strong>phone number</strong>, and a <strong>strong password</strong> (min. 8 chars, 1 uppercase, 1 number, 1 special character).</div></li>
+                <li><span class="manual-step-num">3</span><div>Click <strong>Register</strong>. You will be automatically logged in and redirected to your Dashboard.</div></li>
+              </ol>
+              <div class="tip-box"><i class="fa-solid fa-circle-info" style="color:var(--primary)"></i> Your account is secure — passwords are hashed with bcrypt and never stored in plain text.</div>
+            </div>
+
+            <div class="manual-section">
+              <h3><i class="fa-solid fa-gas-pump" style="color:var(--accent)"></i> Paying for Fuel</h3>
+              <ol class="manual-steps">
+                <li><span class="manual-step-num">1</span><div>Go to <strong>Stations</strong> from the sidebar or use the map to find a station near you.</div></li>
+                <li><span class="manual-step-num">2</span><div>Click <strong>Pay</strong> on any station card, or select a pump number at the station.</div></li>
+                <li><span class="manual-step-num">3</span><div>Choose your fuel type, enter the amount in Maloti (M) or litres, and select your vehicle.</div></li>
+                <li><span class="manual-step-num">4</span><div>Enter your card details (test card: <code>4242 4242 4242 4242</code>, any future expiry, any CVV).</div></li>
+                <li><span class="manual-step-num">5</span><div>Confirm payment. A digital receipt is emailed to you and loyalty points are credited instantly.</div></li>
+              </ol>
+            </div>
+
+            <div class="manual-section">
+              <h3><i class="fa-solid fa-car" style="color:var(--primary)"></i> Managing Vehicles</h3>
+              <ol class="manual-steps">
+                <li><span class="manual-step-num">1</span><div>Go to <strong>My Vehicles</strong> from the sidebar or Dashboard.</div></li>
+                <li><span class="manual-step-num">2</span><div>Click <strong>Add Vehicle</strong>, enter plate number, make, model, year and fuel type from the dropdown.</div></li>
+                <li><span class="manual-step-num">3</span><div>To edit a vehicle, click the <strong>Edit</strong> (pencil) icon. To delete, click the <strong>Delete</strong> (trash) icon and confirm.</div></li>
+              </ol>
+            </div>
+
+            <div class="manual-section">
+              <h3><i class="fa-solid fa-star" style="color:#F59E0B"></i> Loyalty &amp; Rewards</h3>
+              <ol class="manual-steps">
+                <li><span class="manual-step-num">1</span><div>Every M 1 spent earns <strong>1 loyalty point</strong>. Points accumulate across all transactions.</div></li>
+                <li><span class="manual-step-num">2</span><div>Tier upgrades: Bronze (0 pts) → Silver (M500 spent) → Gold (M2,000) → Platinum (M5,000).</div></li>
+                <li><span class="manual-step-num">3</span><div>Go to <strong>Loyalty</strong> to view available rewards and click <strong>Redeem</strong> to exchange points.</div></li>
+              </ol>
+            </div>
+
+            <div class="manual-section">
+              <h3><i class="fa-solid fa-bell" style="color:var(--accent)"></i> Price Alerts</h3>
+              <ol class="manual-steps">
+                <li><span class="manual-step-num">1</span><div>Go to <strong>My Profile</strong> and scroll to the <strong>Price Alerts</strong> section.</div></li>
+                <li><span class="manual-step-num">2</span><div>Select a fuel type from the dropdown and enter your threshold price (e.g. M 15.00/L).</div></li>
+                <li><span class="manual-step-num">3</span><div>Click <strong>Add Alert</strong>. You will receive a push notification when the price drops to or below your threshold.</div></li>
+              </ol>
+              <div class="warn-box"><i class="fa-solid fa-triangle-exclamation" style="color:#F59E0B"></i> Maximum 5 active alerts per account.</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div style="font-weight:800;font-size:1rem;margin-bottom:18px"><i class="fa-solid fa-user-shield" style="color:var(--primary)"></i> Admin Guide</div>
+            <div class="manual-section">
+              <h3><i class="fa-solid fa-store" style="color:var(--accent)"></i> Managing Stations (CRUD)</h3>
+              <ol class="manual-steps">
+                <li><span class="manual-step-num">1</span><div>Log in as admin (<strong>admin@fuelgo.co.ls</strong>). You will see the Admin Dashboard.</div></li>
+                <li><span class="manual-step-num">2</span><div><strong>Create:</strong> Click <strong>Stations</strong> in the sidebar, then <strong>+ Add Station</strong>. Fill in name, district, location, contact and hours. Click <strong>Save Station</strong>.</div></li>
+                <li><span class="manual-step-num">3</span><div><strong>Find/Search:</strong> Use the search bar above the stations table. Type a name or district and click <strong>Find</strong>.</div></li>
+                <li><span class="manual-step-num">4</span><div><strong>Edit:</strong> Click the <strong>Edit</strong> button on any row. Update fields and click <strong>Save Station</strong>.</div></li>
+                <li><span class="manual-step-num">5</span><div><strong>Delete:</strong> Click the <strong>trash</strong> icon and confirm the deletion prompt.</div></li>
+              </ol>
+            </div>
+            <div class="manual-section">
+              <h3><i class="fa-solid fa-chart-bar" style="color:var(--primary)"></i> Running Reports</h3>
+              <ol class="manual-steps">
+                <li><span class="manual-step-num">1</span><div>Click <strong>Reports</strong> in the admin sidebar or go to <strong>reports.html</strong>.</div></li>
+                <li><span class="manual-step-num">2</span><div>Select a report tab: Revenue by Station, Fuel Performance, Customer Loyalty, Station Ratings, or Transaction Detail.</div></li>
+                <li><span class="manual-step-num">3</span><div>Use the <strong>Find</strong> button or search input to filter rows. Click column headers to sort.</div></li>
+                <li><span class="manual-step-num">4</span><div>Click <strong>Export CSV</strong> to download the current report, or <strong>Print</strong> to print it.</div></li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ PANEL 5: Installation ══ -->
+        <div class="doc-panel" id="doc-install">
+          <div class="card" style="margin-bottom:20px">
+            <div style="font-weight:800;font-size:1rem;margin-bottom:18px"><i class="fa-solid fa-gear" style="color:var(--primary)"></i> Installation &amp; Setup Guide</div>
+
+            <div class="manual-section">
+              <h3><i class="fa-solid fa-list-check"></i> Prerequisites</h3>
+              <ul style="font-size:0.87rem;line-height:1.9;padding-left:20px;color:var(--text-secondary)">
+                <li><strong>Node.js 18+</strong> — <a href="https://nodejs.org" style="color:var(--primary)">nodejs.org</a></li>
+                <li><strong>MySQL 8.0+</strong> — local or remote server</li>
+                <li><strong>npm</strong> (comes with Node.js)</li>
+                <li>A modern web browser (Chrome, Firefox, Edge)</li>
+              </ul>
+            </div>
+
+            <div class="manual-section">
+              <h3><i class="fa-solid fa-terminal"></i> Local Setup</h3>
+              <ol class="manual-steps">
+                <li><span class="manual-step-num">1</span><div><strong>Clone/extract</strong> the project to your machine.<br><code style="background:var(--bg-secondary);padding:4px 8px;border-radius:6px;font-size:0.82rem">cd fuelgo</code></div></li>
+                <li><span class="manual-step-num">2</span><div><strong>Install dependencies:</strong><br><code style="background:var(--bg-secondary);padding:4px 8px;border-radius:6px;font-size:0.82rem">cd backend &amp;&amp; npm install</code></div></li>
+                <li><span class="manual-step-num">3</span><div><strong>Configure environment:</strong> Copy <code>.env.example</code> to <code>backend/.env</code> and fill in:<br>
+                  <code style="background:var(--bg-secondary);padding:6px 10px;border-radius:6px;font-size:0.8rem;display:block;margin-top:6px">
+                    DB_HOST=localhost<br>DB_USER=root<br>DB_PASS=yourpassword<br>DB_NAME=fuelgo<br>JWT_SECRET=any-long-random-string<br>PORT=5001
+                  </code>
+                </div></li>
+                <li><span class="manual-step-num">4</span><div><strong>Initialise database &amp; seed test data:</strong><br>
+                  <code style="background:var(--bg-secondary);padding:4px 8px;border-radius:6px;font-size:0.82rem">node database/initDB.js &amp;&amp; node database/seed.js</code>
+                </div></li>
+                <li><span class="manual-step-num">5</span><div><strong>Start the server:</strong><br>
+                  <code style="background:var(--bg-secondary);padding:4px 8px;border-radius:6px;font-size:0.82rem">npm start</code>
+                  — then open <strong>http://localhost:5001</strong>
+                </div></li>
+              </ol>
+              <div class="tip-box"><i class="fa-solid fa-circle-info" style="color:var(--primary)"></i>
+                Default demo accounts after seeding:<br>
+                <strong>Customer:</strong> demo@fuelgo.co.ls / demo1234<br>
+                <strong>Admin:</strong> admin@fuelgo.co.ls / admin123
+              </div>
+            </div>
+
+            <div class="manual-section">
+              <h3><i class="fa-brands fa-railway" style="color:#7C3AED"></i> Railway Deployment</h3>
+              <ol class="manual-steps">
+                <li><span class="manual-step-num">1</span><div>Install Railway CLI: <code style="background:var(--bg-secondary);padding:3px 7px;border-radius:5px;font-size:0.82rem">npm install -g @railway/cli</code></div></li>
+                <li><span class="manual-step-num">2</span><div>Login: <code style="background:var(--bg-secondary);padding:3px 7px;border-radius:5px;font-size:0.82rem">railway login</code></div></li>
+                <li><span class="manual-step-num">3</span><div>Link project: <code style="background:var(--bg-secondary);padding:3px 7px;border-radius:5px;font-size:0.82rem">railway link</code></div></li>
+                <li><span class="manual-step-num">4</span><div>Set environment variables in Railway dashboard (same keys as local <code>.env</code>), add a MySQL plugin.</div></li>
+                <li><span class="manual-step-num">5</span><div>Deploy: <code style="background:var(--bg-secondary);padding:3px 7px;border-radius:5px;font-size:0.82rem">railway up</code> — live at your Railway domain.</div></li>
+              </ol>
+            </div>
+
+            <div class="manual-section">
+              <h3><i class="fa-solid fa-database"></i> Database Optimisation Notes</h3>
+              <p style="font-size:0.87rem;color:var(--text-secondary);line-height:1.7">
+                The schema includes <strong>22+ indexes</strong> for optimised query performance:
+                indexes on foreign keys, frequently filtered columns (date, role, status, district, tier),
+                and composite indexes for common JOIN patterns. Transactions use
+                <code style="font-size:0.82rem">conn.beginTransaction()</code> / <code>conn.commit()</code> /
+                <code>conn.rollback()</code> to ensure atomicity — if any step of a fuel payment fails,
+                the entire operation is rolled back.
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /page-content -->
+    </main>
+  </div>
+
+  <nav class="bottom-nav" id="bottom-nav"></nav>
+
+  <script src="js/loader.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    initAppFrame();
+
+    function switchDoc(name, btn) {
+      document.querySelectorAll('.doc-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.doc-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('doc-' + name).classList.add('active');
+    }
+    window.switchDoc = switchDoc;
+    hidePageLoader();
+  </script>
+</body>
+</html>

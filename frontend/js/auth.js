@@ -174,8 +174,9 @@ function buildNav(role = 'customer') {
       { icon: 'fa-solid fa-gas-pump',          label: 'Pay',       href: 'pump.html',     special: true },
       { icon: 'fa-solid fa-clock-rotate-left', label: 'History',   href: 'history.html' },
       { icon: 'fa-solid fa-star',              label: 'Loyalty',   href: 'loyalty.html' },
-      { icon: 'fa-solid fa-chart-pie',         label: 'Analytics', href: 'analytics.html', sidebarOnly: true },
-      { icon: 'fa-regular fa-circle-user',     label: 'Profile',   href: 'profile.html',   sidebarOnly: true },
+      { icon: 'fa-solid fa-chart-pie',         label: 'Analytics',  href: 'analytics.html',  sidebarOnly: true },
+      { icon: 'fa-regular fa-circle-user',     label: 'Profile',    href: 'profile.html',    sidebarOnly: true },
+      { icon: 'fa-solid fa-book-open',         label: 'Docs',       href: 'docs.html',       sidebarOnly: true },
     ],
     employee: [
       { icon: 'fa-solid fa-gauge',             label: 'Dashboard', href: 'employee-dashboard.html' },
@@ -189,7 +190,8 @@ function buildNav(role = 'customer') {
       { icon: 'fa-solid fa-building',    label: 'Stations',  href: 'admin-dashboard.html#stations' },
       { icon: 'fa-solid fa-tags',        label: 'Prices',    href: 'admin-dashboard.html#prices',    special: true },
       { icon: 'fa-solid fa-users',       label: 'Staff',     href: 'admin-dashboard.html#employees' },
-      { icon: 'fa-solid fa-chart-line',  label: 'Reports',   href: 'admin-dashboard.html#reports' },
+      { icon: 'fa-solid fa-chart-bar',    label: 'Reports',   href: 'reports.html' },
+      { icon: 'fa-solid fa-book-open',   label: 'Docs',      href: 'docs.html',      sidebarOnly: true },
     ],
   };
 

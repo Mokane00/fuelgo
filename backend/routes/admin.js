@@ -135,6 +135,74 @@ router.get('/reports/fuel', authMW(['admin']), async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── Report: Customer Loyalty Summary ──────────────────────
+router.get('/reports/loyalty', authMW(['admin']), async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT u.user_id, u.full_name, u.email, u.phone, u.created_at,
+             l.points_balance, l.tier, l.total_spent,
+             COUNT(DISTINCT t.transaction_id)   AS total_transactions,
+             COALESCE(SUM(t.litres), 0)         AS total_litres,
+             COALESCE(SUM(lt.points), 0)        AS total_points_earned,
+             MAX(t.transaction_date)             AS last_transaction
+      FROM users u
+      JOIN    loyalty              l  ON l.user_id  = u.user_id
+      LEFT JOIN transactions       t  ON t.user_id  = u.user_id
+      LEFT JOIN loyalty_transactions lt ON lt.user_id = u.user_id AND lt.type = 'earn'
+      WHERE u.role = 'customer'
+      GROUP BY u.user_id, l.points_balance, l.tier, l.total_spent
+      ORDER BY l.total_spent DESC`);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Report: Station Ratings & Reviews ─────────────────────
+router.get('/reports/ratings', authMW(['admin']), async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT s.station_id, s.station_name, s.district, s.status,
+             COUNT(sr.rating_id)               AS review_count,
+             ROUND(AVG(sr.rating), 2)           AS avg_rating,
+             SUM(sr.rating = 5)                 AS five_star,
+             SUM(sr.rating = 4)                 AS four_star,
+             SUM(sr.rating <= 3)                AS three_or_less,
+             COUNT(DISTINCT t.transaction_id)   AS total_transactions,
+             COALESCE(SUM(t.total_amount), 0)   AS total_revenue
+      FROM stations s
+      LEFT JOIN station_ratings sr ON sr.station_id = s.station_id
+      LEFT JOIN transactions     t  ON t.station_id  = s.station_id
+      GROUP BY s.station_id, s.station_name, s.district, s.status
+      ORDER BY avg_rating DESC, review_count DESC`);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Report: Transaction Detail (date-ranged) ───────────────
+router.get('/reports/transactions', authMW(['admin']), async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    const start = from || new Date(Date.now() - 30*86400000).toISOString().slice(0,10);
+    const end   = to   || new Date().toISOString().slice(0,10);
+    const [rows] = await db.query(`
+      SELECT t.transaction_id, t.transaction_date,
+             u.full_name  AS customer_name, u.email AS customer_email,
+             s.station_name, s.district,
+             ft.fuel_name, t.litres, t.price_per_litre,
+             t.total_amount, t.payment_method, t.points_earned,
+             v.plate_number, v.make, v.model AS vehicle_model
+      FROM transactions t
+      JOIN users      u  ON t.user_id      = u.user_id
+      JOIN stations   s  ON t.station_id   = s.station_id
+      JOIN fuel_types ft ON t.fuel_type_id = ft.fuel_type_id
+      LEFT JOIN vehicles v ON t.vehicle_id = v.vehicle_id
+      WHERE DATE(t.transaction_date) BETWEEN ? AND ?
+      ORDER BY t.transaction_date DESC
+      LIMIT 500`,
+      [start, end]);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ── Fuel price update ─────────────────────────────────────
 router.put('/fuel-prices/:id', authMW(['admin']), async (req, res) => {
   try {

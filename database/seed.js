@@ -328,6 +328,80 @@ async function seed() {
     }
   }
 
+  // ────────────────────────────────────────────────────────
+  // 12. STATION RATINGS  (7+ records, multi-user, multi-station)
+  // ────────────────────────────────────────────────────────
+  const [customers]  = await db.query("SELECT user_id FROM users WHERE role='customer' LIMIT 10");
+  const [stationsAll] = await db.query("SELECT station_id FROM stations LIMIT 15");
+  const ratingComments = [
+    'Great service and clean pumps!',
+    'Fast and efficient. Highly recommend.',
+    'Pumps were all available, no wait time.',
+    'Staff were very helpful and professional.',
+    'Good location, easy to access.',
+    'Competitive prices and friendly service.',
+    'Always my go-to station on this route.',
+    'Excellent facilities, clean restrooms too.',
+    null, null  // some without comments
+  ];
+  let ratingCount = 0;
+  for (let i = 0; i < Math.min(customers.length, 10); i++) {
+    const uid = customers[i].user_id;
+    // Each customer rates a different set of stations
+    const ratingTargets = stationsAll.slice(i % stationsAll.length, (i % stationsAll.length) + 3);
+    for (const { station_id } of ratingTargets) {
+      const rating  = rnd(3, 5);
+      const comment = pick(ratingComments);
+      await db.execute(
+        'INSERT IGNORE INTO station_ratings (user_id, station_id, rating, comment) VALUES (?,?,?,?)',
+        [uid, station_id, rating, comment]
+      );
+      ratingCount++;
+    }
+  }
+  console.log(`  ✅ ${ratingCount} Station ratings`);
+
+  // ────────────────────────────────────────────────────────
+  // 13. USER FAVOURITES  (7+ records)
+  // ────────────────────────────────────────────────────────
+  const labels = ['home','work','other'];
+  let favCount = 0;
+  for (let i = 0; i < Math.min(customers.length, 8); i++) {
+    const uid = customers[i].user_id;
+    const favTargets = stationsAll.slice((i * 2) % stationsAll.length, ((i * 2) % stationsAll.length) + 2);
+    for (const { station_id } of favTargets) {
+      await db.execute(
+        'INSERT IGNORE INTO user_favourites (user_id, station_id, label) VALUES (?,?,?)',
+        [uid, station_id, pick(labels)]
+      );
+      favCount++;
+    }
+  }
+  console.log(`  ✅ ${favCount} User favourites`);
+
+  // ────────────────────────────────────────────────────────
+  // 14. PRICE ALERTS  (7+ records across different users & fuel types)
+  // ────────────────────────────────────────────────────────
+  const [fuelList] = await db.query("SELECT fuel_type_id, price_per_litre FROM fuel_types");
+  let alertCount = 0;
+  for (let i = 0; i < Math.min(customers.length, 8); i++) {
+    const uid  = customers[i].user_id;
+    const fuel = fuelList[i % fuelList.length];
+    const threshold = parseFloat(fuel.price_per_litre) + rnd(1, 5);
+    const [existing] = await db.query(
+      'SELECT COUNT(*) c FROM price_alerts WHERE user_id=? AND fuel_type_id=?',
+      [uid, fuel.fuel_type_id]
+    );
+    if (existing[0].c === 0) {
+      await db.execute(
+        'INSERT INTO price_alerts (user_id, fuel_type_id, threshold_price) VALUES (?,?,?)',
+        [uid, fuel.fuel_type_id, threshold.toFixed(2)]
+      );
+      alertCount++;
+    }
+  }
+  console.log(`  ✅ ${alertCount} Price alerts`);
+
   await db.end();
   console.log('\n🎉 Seeding complete!');
   console.log('──────────────────────────────────────');
