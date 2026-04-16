@@ -4,7 +4,9 @@
 // Author: FuelGO Dev
 // ================================================
 
-const API_BASE = 'http://localhost:5001/api';
+const API_BASE = window.location.hostname === 'localhost'
+  ? 'http://localhost:5001/api'
+  : `${window.location.origin}/api`;
 
 // ── Token helpers ──────────────────────────────
 function getToken()  { return localStorage.getItem('fuelgo_token'); }

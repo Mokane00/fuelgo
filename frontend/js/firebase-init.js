@@ -41,7 +41,10 @@ export async function initPushNotifications() {
       const { getToken: getAuthToken } = await import('./api.js');
       const authToken = getAuthToken();
       if (!authToken) return;
-      await fetch('http://localhost:5001/api/push/subscribe', {
+      const _apiBase = window.location.hostname === 'localhost'
+        ? 'http://localhost:5001/api'
+        : `${window.location.origin}/api`;
+      await fetch(`${_apiBase}/push/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
         body: JSON.stringify({ token }),
