@@ -18,6 +18,9 @@ const { generalLimiter, authLimiter, paymentLimiter } = require('./middleware/ra
 const app    = express();
 const server = http.createServer(app);
 
+// Trust Railway/Heroku/Render reverse proxy (needed for rate-limit + IP detection)
+app.set('trust proxy', 1);
+
 // ── Socket.io (real-time pump status) ───────────
 const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
