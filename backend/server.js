@@ -40,7 +40,7 @@ app.use(helmet({
       styleSrc:      ["'self'", "'unsafe-inline'", "fonts.googleapis.com", "cdnjs.cloudflare.com"],
       fontSrc:       ["'self'", "fonts.gstatic.com", "cdnjs.cloudflare.com"],
       imgSrc:        ["'self'", "data:", "blob:", "*.openstreetmap.org", "*.tile.openstreetmap.org", "res.cloudinary.com", "*.googleusercontent.com", "maps.googleapis.com", "maps.gstatic.com", "*.ggpht.com"],
-      connectSrc:    ["'self'", "cdn.jsdelivr.net", "api.stripe.com", "*.openstreetmap.org", "maps.googleapis.com", "maps.gstatic.com", "ws://localhost:5001", "api.openweathermap.org", "openexchangerates.org", "ipapi.co", "fcm.googleapis.com", "api.what3words.com", "api.mapbox.com", "events.mapbox.com", "www.carboninterface.com"],
+      connectSrc:    ["'self'", "cdn.jsdelivr.net", "unpkg.com", "api.stripe.com", "*.openstreetmap.org", "maps.googleapis.com", "maps.gstatic.com", "ws://localhost:5001", "wss://fuelgo-production.up.railway.app", "api.openweathermap.org", "openexchangerates.org", "ipapi.co", "fcm.googleapis.com", "api.what3words.com", "api.mapbox.com", "events.mapbox.com", "www.carboninterface.com"],
       frameSrc:      ["'self'", "js.stripe.com"],
     },
   },
