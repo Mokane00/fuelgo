@@ -522,8 +522,8 @@
         status:         document.getElementById('st-status').value,
       };
       try {
-        if (id) await API.stations.update(parseInt(id), data);
-        else    await API.stations.create(data);
+        if (id) await API.admin.updateStation(parseInt(id), data);
+        else    await API.admin.createStation(data);
         closeModal('station-modal');
         showToast(id ? 'Station updated!' : 'Station added!', 'success');
         loadStations();
@@ -607,44 +607,9 @@
     }
     function filterCustomers(q) { renderCustomers(q ? allCustomers.filter(c => `${c.full_name} ${c.email}`.toLowerCase().includes(q.toLowerCase())) : allCustomers); }
 
-    async function loadReports() {
-      try {
-        const [stationSales, employeeSales, fuelPerf] = await Promise.all([
-          API.admin.revenueReport(), API.admin.employees(), API.admin.fuelReport()
-        ]);
-
-        document.getElementById('station-sales-content').innerHTML = `
-          <div class="table-wrapper" style="border:none">
-            <table class="table">
-              <thead><tr><th>Station</th><th>Transactions</th><th>Revenue</th></tr></thead>
-              <tbody>${stationSales.map(s=>`<tr><td><strong>${s.station_name}</strong><br><small style="color:var(--text-secondary)">${s.district||''}</small></td><td>${s.txns||s.total_transactions||0}</td><td><strong>${formatCurrency(s.revenue||s.total_revenue||0)}</strong></td></tr>`).join('')}</tbody>
-            </table>
-          </div>`;
-
-        document.getElementById('employee-sales-content').innerHTML = `
-          <div class="table-wrapper" style="border:none">
-            <table class="table">
-              <thead><tr><th>Employee</th><th>Txns Today</th><th>Revenue Today</th></tr></thead>
-              <tbody>${employeeSales.map(e=>`<tr><td><strong>${e.full_name || '—'}</strong><br><small style="color:var(--text-secondary)">${e.station_name||''}</small></td><td>${e.transactions_today||0}</td><td>${formatCurrency(e.revenue_today||0)}</td></tr>`).join('')}</tbody>
-            </table>
-          </div>`;
-
-        if (reportFuelChart) reportFuelChart.destroy();
-        const ctx = document.getElementById('report-fuel-chart').getContext('2d');
-        reportFuelChart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: fuelPerf.map(f => f.fuel_name),
-            datasets: [
-              { label: 'Revenue (M)', data: fuelPerf.map(f => parseFloat(f.revenue || f.total_revenue || 0)), backgroundColor: 'rgba(249,115,22,0.7)', borderRadius: 8 },
-              { label: 'Litres',      data: fuelPerf.map(f => parseFloat(f.litres  || f.total_litres  || 0)), backgroundColor: 'rgba(26,60,110,0.7)',   borderRadius: 8 }
-            ]
-          },
-          options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
-        });
-
-        document.getElementById('export-station-sales').onclick = () => exportCSV(stationSales, 'station-sales.csv');
-      } catch(e) { showToast('Failed to load reports', 'danger'); }
+    function loadReports() {
+      // Reports panel now links to the dedicated reports.html page.
+      // No DOM manipulation needed here — the panel renders static link cards.
     }
 
     async function deleteEmployee(id, name) {

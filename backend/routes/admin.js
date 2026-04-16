@@ -203,13 +203,4 @@ router.get('/reports/transactions', authMW(['admin']), async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── Fuel price update ─────────────────────────────────────
-router.put('/fuel-prices/:id', authMW(['admin']), async (req, res) => {
-  try {
-    await db.query('UPDATE fuel_types SET price_per_litre=? WHERE fuel_type_id=?',
-      [req.body.price_per_litre, req.params.id]);
-    res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
 module.exports = router;
