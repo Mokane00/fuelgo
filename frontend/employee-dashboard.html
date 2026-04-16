@@ -350,7 +350,7 @@
     loadDashboard().then(() => {
       // After dashboard loads, join the station room for real-time pump updates
       try {
-        const socket = io('http://localhost:5001');
+        const socket = io();
         const stationId = user?.station_id;
         if (stationId) {
           socket.emit('join_station', stationId);

@@ -778,7 +778,7 @@
       const orig = countEl.textContent;
       countEl.textContent = 'Calculating routes…';
       try {
-        const nearest = await fetch(`http://localhost:5001/api/stations/nearest?lat=${userLat}&lng=${userLng}`)
+        const nearest = await fetch(`/api/stations/nearest?lat=${userLat}&lng=${userLng}`)
           .then(r => r.ok ? r.json() : null);
         if (!nearest) { applySort(filteredStations); return; }
         // Merge driving distance data into filteredStations
@@ -992,7 +992,7 @@
 
           // Lazy-load weather for this station's coordinates
           if (s.latitude && s.longitude) {
-            fetch(`http://localhost:5001/api/weather?lat=${s.latitude}&lng=${s.longitude}`)
+            fetch(`/api/weather?lat=${s.latitude}&lng=${s.longitude}`)
               .then(r => r.ok ? r.json() : null)
               .then(w => {
                 if (!w) return;
@@ -1516,7 +1516,7 @@
 
   <!-- Google Maps JS API — key is loaded from backend env, not hardcoded here -->
   <script>
-    fetch('http://localhost:5001/api/payments/maps-config')
+    fetch('/api/payments/maps-config')
       .then(r => r.json())
       .then(cfg => {
         if (!cfg.maps_key) { console.warn('Google Maps key not configured in backend .env'); return; }

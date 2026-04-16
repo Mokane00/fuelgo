@@ -1,6 +1,6 @@
-// FuelGO Service Worker — v2.2
+// FuelGO Service Worker — v2.3
 // Strategies: static → cache-first | dynamic → stale-while-revalidate | API → network-only
-const CACHE_VERSION = 'fuelgo-v4';
+const CACHE_VERSION = 'fuelgo-v5';
 const STATIC_CACHE  = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 
