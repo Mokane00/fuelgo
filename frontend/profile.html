@@ -155,6 +155,36 @@
           </div>
         </div>
 
+        <!-- Price Alerts -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="section-divider"><i class="fa-solid fa-bell" style="color:var(--accent);margin-right:4px"></i>Price Alerts</div>
+          <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:14px">
+            Get notified when fuel prices drop below your threshold. Max 5 active alerts.
+          </p>
+          <!-- Add alert form -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
+            <div class="form-group" style="flex:1;min-width:130px;margin:0">
+              <label class="form-label" style="font-size:0.77rem">Fuel Type</label>
+              <select id="alert-fuel-select" class="form-control" style="font-size:0.85rem">
+                <option value="">Loading…</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1;min-width:120px;margin:0">
+              <label class="form-label" style="font-size:0.77rem">Threshold (M/L)</label>
+              <input type="number" id="alert-threshold" class="form-control" placeholder="e.g. 16.50"
+                min="1" step="0.01" style="font-size:0.85rem">
+            </div>
+            <button class="btn btn-accent btn-sm" style="flex-shrink:0" onclick="addPriceAlert()">
+              <i class="fa-solid fa-plus"></i> Add Alert
+            </button>
+          </div>
+          <!-- Alerts list -->
+          <div id="alerts-list">
+            <div class="skeleton" style="height:44px;border-radius:8px;margin-bottom:8px"></div>
+            <div class="skeleton" style="height:44px;border-radius:8px"></div>
+          </div>
+        </div>
+
         <!-- Danger Zone -->
         <div class="card" style="border-color:var(--danger-light,#fca5a5);margin-bottom:20px">
           <div class="section-divider" style="color:var(--danger,#dc2626)">Danger Zone</div>
@@ -304,6 +334,93 @@
     });
 
     loadProfile();
+
+    // ── Price Alerts ──────────────────────────────
+    async function loadAlerts() {
+      try {
+        const [alerts, fuelTypes] = await Promise.all([
+          API.alerts.getAll(),
+          API.fuelTypes.getAll(),
+        ]);
+
+        // Populate fuel type select
+        const sel = document.getElementById('alert-fuel-select');
+        sel.innerHTML = fuelTypes.map(f =>
+          `<option value="${f.fuel_type_id}">${f.fuel_name} — M${parseFloat(f.price_per_litre).toFixed(2)}/L</option>`
+        ).join('');
+
+        renderAlerts(alerts);
+      } catch {
+        document.getElementById('alerts-list').innerHTML =
+          '<span style="font-size:0.82rem;color:var(--text-muted)">Could not load alerts.</span>';
+      }
+    }
+
+    function renderAlerts(alerts) {
+      const list = document.getElementById('alerts-list');
+      if (!alerts.length) {
+        list.innerHTML = `<div style="text-align:center;padding:18px 0;color:var(--text-secondary);font-size:0.85rem">
+          <i class="fa-regular fa-bell-slash" style="font-size:1.5rem;display:block;margin-bottom:6px;opacity:.4"></i>
+          No price alerts set
+        </div>`;
+        return;
+      }
+      list.innerHTML = alerts.map(a => `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;
+                    background:var(--bg-secondary);border-radius:8px;margin-bottom:8px">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:0.87rem">${a.fuel_name}</div>
+            <div style="font-size:0.76rem;color:var(--text-secondary);margin-top:2px">
+              Alert when ≤ M${parseFloat(a.threshold_price).toFixed(2)}/L
+              &nbsp;·&nbsp; Current: M${parseFloat(a.current_price).toFixed(2)}/L
+              ${a.is_active
+                ? `<span style="color:#16a34a;margin-left:4px">● Active</span>`
+                : `<span style="color:var(--text-muted);margin-left:4px">● Triggered</span>`}
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="color:var(--danger);padding:4px 8px"
+            onclick="deletePriceAlert(${a.alert_id})" title="Remove alert">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>`).join('');
+    }
+
+    async function addPriceAlert() {
+      const fuelTypeId = parseInt(document.getElementById('alert-fuel-select').value);
+      const threshold  = parseFloat(document.getElementById('alert-threshold').value);
+      if (!fuelTypeId) { showToast('Select a fuel type', 'warning'); return; }
+      if (!threshold || threshold <= 0) { showToast('Enter a valid threshold price', 'warning'); return; }
+
+      const btn = document.querySelector('[onclick="addPriceAlert()"]');
+      if (btn) setBtnLoading(btn, true);
+      try {
+        await API.alerts.create({ fuel_type_id: fuelTypeId, threshold_price: threshold });
+        document.getElementById('alert-threshold').value = '';
+        showToast('Price alert created!', 'success');
+        const updated = await API.alerts.getAll();
+        renderAlerts(updated);
+      } catch (err) {
+        showToast(err.message || 'Failed to create alert', 'danger');
+      } finally {
+        if (btn) setBtnLoading(btn, false);
+      }
+    }
+
+    async function deletePriceAlert(id) {
+      try {
+        await API.alerts.delete(id);
+        showToast('Alert removed', 'success');
+        const updated = await API.alerts.getAll();
+        renderAlerts(updated);
+      } catch (err) {
+        showToast(err.message || 'Failed to remove alert', 'danger');
+      }
+    }
+
+    window.addPriceAlert    = addPriceAlert;
+    window.deletePriceAlert = deletePriceAlert;
+
+    loadAlerts();
   </script>
 </body>
 </html>

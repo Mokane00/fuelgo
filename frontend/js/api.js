@@ -95,9 +95,27 @@ const API = {
   },
 
   transactions: {
-    getAll:  ()     => req('GET',  '/transactions'),
-    getById: (id)   => req('GET',  `/transactions/${id}`),
-    create:  (data) => req('POST', '/transactions', data),
+    getAll:      ()     => req('GET',  '/transactions'),
+    getById:     (id)   => req('GET',  `/transactions/${id}`),
+    create:      (data) => req('POST', '/transactions', data),
+    resendEmail: (id)   => req('POST', `/transactions/${id}/resend-email`),
+  },
+
+  alerts: {
+    getAll: ()          => req('GET',    '/alerts'),
+    create: (data)      => req('POST',   '/alerts', data),
+    delete: (id)        => req('DELETE', `/alerts/${id}`),
+  },
+
+  ratings: {
+    get:    (sid)       => req('GET',  `/stations/${sid}/ratings`),
+    submit: (sid, data) => req('POST', `/stations/${sid}/ratings`, data),
+  },
+
+  favourites: {
+    getAll: ()          => req('GET',    '/favourites'),
+    add:    (sid, lbl)  => req('POST',   '/favourites', { station_id: sid, label: lbl }),
+    remove: (sid)       => req('DELETE', `/favourites/${sid}`),
   },
 
   loyalty: {

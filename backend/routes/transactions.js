@@ -7,7 +7,7 @@ const { sendPush } = require('../utils/firebase');
 const { getCarbonEstimate } = require('../utils/carbon');
 
 const TXN_SELECT = `
-  SELECT t.*,
+  SELECT t.*, t.co2_kg,
     s.station_name, s.location AS station_location,
     ft.fuel_name,
     v.plate_number, v.make, v.model AS vehicle_model,
@@ -136,6 +136,30 @@ router.post('/', authMW(), async (req, res) => {
       { transaction_id: String(txnId) }
     );
 
+    // Budget push check (non-blocking)
+    db.query(
+      `SELECT u.fuel_budget, COALESCE(SUM(t2.total_amount),0) AS month_spend
+       FROM users u
+       LEFT JOIN transactions t2 ON t2.user_id = u.user_id
+         AND MONTH(t2.transaction_date) = MONTH(NOW())
+         AND YEAR(t2.transaction_date)  = YEAR(NOW())
+         AND t2.status = 'completed'
+       WHERE u.user_id = ?
+       GROUP BY u.user_id`,
+      [req.user.user_id]
+    ).then(([rows]) => {
+      const row = rows[0];
+      if (!row || !row.fuel_budget) return;
+      const pct = parseFloat(row.month_spend) / parseFloat(row.fuel_budget);
+      if (pct >= 1.0) {
+        sendPush(userRow.fcm_token, '⚠️ Budget Reached',
+          `You've used 100% of your M${row.fuel_budget} fuel budget this month`);
+      } else if (pct >= 0.8) {
+        sendPush(userRow.fcm_token, '🔔 Budget Alert',
+          `You've used ${(pct*100).toFixed(0)}% of your M${row.fuel_budget} fuel budget`);
+      }
+    }).catch(() => {});
+
     res.status(201).json({ ...full, points_earned: pts, co2_kg });
   } catch (err) {
     await conn.rollback();
@@ -143,6 +167,31 @@ router.post('/', authMW(), async (req, res) => {
   } finally {
     conn.release();
   }
+});
+
+// POST /api/transactions/:id/resend-email
+router.post('/:id/resend-email', authMW(), async (req, res) => {
+  try {
+    const [[txn]] = await db.query(
+      `${TXN_SELECT} WHERE t.transaction_id = ? AND t.user_id = ?`,
+      [req.params.id, req.user.user_id]
+    );
+    if (!txn) return res.status(404).json({ error: 'Transaction not found' });
+
+    const [[userRow]] = await db.query('SELECT email, full_name FROM users WHERE user_id = ?', [req.user.user_id]);
+
+    await sendReceiptEmail(userRow.email, {
+      userName:       userRow.full_name,
+      transactionId:  txn.transaction_id,
+      stationName:    txn.station_name,
+      fuelType:       txn.fuel_name,
+      litres:         txn.litres,
+      totalAmount:    txn.total_amount,
+      paymentMethod:  txn.payment_method,
+      createdAt:      txn.transaction_date,
+    });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 module.exports = router;

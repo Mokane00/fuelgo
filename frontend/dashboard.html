@@ -320,6 +320,15 @@
           <button class="btn btn-accent btn-sm" onclick="openBudgetModal()">Set Budget</button>
         </div>
 
+        <!-- Favourite Stations widget -->
+        <div class="card observe-animate" id="fav-stations-card" style="margin-bottom:20px;display:none">
+          <div class="section-header">
+            <h3 class="section-title"><i class="fa-solid fa-star" style="color:var(--accent)"></i> Favourite Stations</h3>
+            <a href="stations.html" class="section-action">Manage →</a>
+          </div>
+          <div id="fav-stations-list" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+
         <!-- My Vehicles -->
         <div class="card observe-animate" style="margin-bottom:20px">
           <div class="section-header">
@@ -799,6 +808,7 @@
       }
 
       loadDashboard();
+      loadFavouriteStations();
       createParticles(document.getElementById('loyalty-particles'), 8);
       loadNearestStation();
     }
@@ -894,6 +904,77 @@
       loadBudgetUI(parseFloat(spentText) || 0);
       notifySuccess('Budget set!', `Monthly budget set to ${formatCurrency(num)}`, 4000, { category: 'system' });
     }
+    // ════════════════════════════════════════════════
+    //  Favourite Stations widget
+    // ════════════════════════════════════════════════
+    const LABEL_ICONS = { home: 'fa-house', work: 'fa-briefcase', other: 'fa-star' };
+
+    async function loadFavouriteStations() {
+      const card = document.getElementById('fav-stations-card');
+      const list = document.getElementById('fav-stations-list');
+
+      // Show skeletons while loading
+      const showSkeletons = (n) => {
+        list.innerHTML = Array(n).fill(
+          `<div class="skeleton" style="height:52px;border-radius:10px"></div>`
+        ).join('');
+        card.style.display = 'block';
+      };
+
+      const renderFavs = (favs) => {
+        list.innerHTML = favs.map(s => {
+          const icon  = LABEL_ICONS[s.label] || 'fa-star';
+          const price = s.price_per_litre ? `M ${parseFloat(s.price_per_litre).toFixed(2)}/L` : '';
+          return `
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;
+                      background:var(--bg-secondary);border-radius:10px;cursor:pointer"
+               onclick="window.location.href='pump.html?station=${s.station_id}'">
+            <div style="width:38px;height:38px;border-radius:50%;background:var(--primary-bg);
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0;
+                        color:var(--primary);font-size:1rem">
+              <i class="fa-solid ${icon}"></i>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:0.9rem;white-space:nowrap;overflow:hidden;
+                          text-overflow:ellipsis">${s.station_name}</div>
+              <div style="font-size:0.76rem;color:var(--text-secondary);margin-top:2px">
+                ${s.district || ''}
+                ${price ? `<span style="margin-left:6px;color:var(--text-muted)">${price}</span>` : ''}
+                <span style="margin-left:6px;color:${s.is_open ? '#16a34a' : 'var(--danger)'}">
+                  ● ${s.is_open ? 'Open' : 'Closed'}
+                </span>
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:0.8rem"></i>
+          </div>`;
+        }).join('');
+      };
+
+      // Try server API first (authenticated, richer data)
+      if (localStorage.getItem('fuelgo_token')) {
+        try {
+          showSkeletons(2);
+          const favs = await API.favourites.getAll();
+          if (!favs.length) { card.style.display = 'none'; return; }
+          renderFavs(favs);
+          return;
+        } catch { /* fall through to localStorage */ }
+      }
+
+      // localStorage fallback (stations.html stores IDs in fuelgo_favorites)
+      const ids = JSON.parse(localStorage.getItem('fuelgo_favorites') || '[]');
+      if (!ids.length) return;
+      showSkeletons(ids.length);
+      try {
+        const all  = await API.stations.getAll();
+        const favs = ids.map(id => all.find(s => s.station_id === id)).filter(Boolean);
+        if (!favs.length) { card.style.display = 'none'; return; }
+        renderFavs(favs);
+      } catch {
+        card.style.display = 'none';
+      }
+    }
+
     window.openBudgetModal = openBudgetModal;
     window.saveBudget = saveBudget;
   </script>

@@ -1228,6 +1228,29 @@
             <div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">Pump Status</div>
             <div id="modal-pumps"><span class="text-muted" style="font-size:0.85rem">Loading…</span></div>
           </div>
+          <div id="modal-ratings-section">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <div style="font-size:0.78rem;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:0.04em">Ratings & Reviews</div>
+              <button class="btn btn-ghost btn-sm" style="font-size:0.75rem;padding:3px 10px" id="modal-rate-toggle-btn"
+                onclick="toggleRateForm()"><i class="fa-solid fa-star" style="color:var(--accent)"></i> Rate</button>
+            </div>
+            <div id="modal-ratings-summary"><span class="spinner spinner-sm" style="display:inline-block"></span></div>
+            <!-- Rate form (hidden by default) -->
+            <div id="modal-rate-form" style="display:none;margin-top:10px;padding:12px;background:var(--bg-secondary);border-radius:10px">
+              <div style="font-size:0.82rem;font-weight:600;margin-bottom:8px">Your Rating</div>
+              <div class="star-picker" id="star-picker" style="display:flex;gap:6px;margin-bottom:10px">
+                ${[1,2,3,4,5].map(n=>`<span class="star-pick" data-v="${n}" onclick="pickStar(${n})"
+                  style="font-size:1.6rem;cursor:pointer;color:var(--border);transition:color .15s">★</span>`).join('')}
+              </div>
+              <textarea id="rate-comment" rows="2" placeholder="Optional comment…"
+                style="width:100%;resize:vertical;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-primary);color:var(--text-primary);font-size:0.83rem;font-family:inherit;box-sizing:border-box"></textarea>
+              <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end">
+                <button class="btn btn-ghost btn-sm" onclick="toggleRateForm()">Cancel</button>
+                <button class="btn btn-accent btn-sm" onclick="submitRating()"><i class="fa-solid fa-check"></i> Submit</button>
+              </div>
+            </div>
+            <div id="modal-reviews-list" style="margin-top:10px;display:flex;flex-direction:column;gap:8px"></div>
+          </div>
         </div>`;
 
       openModal('station-modal');
@@ -1265,7 +1288,108 @@
         document.getElementById('modal-prices').innerHTML = '<span class="text-muted" style="font-size:0.85rem">Prices unavailable</span>';
         document.getElementById('modal-pumps').innerHTML  = '<span class="text-muted" style="font-size:0.85rem">Pump data unavailable</span>';
       }
+
+      // Load ratings
+      loadModalRatings(id);
     }
+
+    let _ratingStationId = null;
+    let _pickedStar = 0;
+
+    async function loadModalRatings(sid) {
+      _ratingStationId = sid;
+      _pickedStar = 0;
+      // reset rate form
+      document.getElementById('modal-rate-form').style.display = 'none';
+      document.getElementById('rate-comment').value = '';
+      document.querySelectorAll('.star-pick').forEach(s => s.style.color = 'var(--border)');
+
+      if (!getToken()) {
+        document.getElementById('modal-ratings-section').style.display = 'none';
+        return;
+      }
+      document.getElementById('modal-ratings-section').style.display = 'block';
+      document.getElementById('modal-ratings-summary').innerHTML =
+        '<span class="spinner spinner-sm" style="display:inline-block"></span>';
+      document.getElementById('modal-reviews-list').innerHTML = '';
+
+      try {
+        const data = await API.ratings.get(sid);
+        renderRatings(data);
+      } catch {
+        document.getElementById('modal-ratings-summary').innerHTML =
+          '<span style="font-size:0.82rem;color:var(--text-muted)">Ratings unavailable</span>';
+      }
+    }
+
+    function renderRatings(data) {
+      const { avg_rating, count, user_rating, reviews } = data;
+
+      // Summary row
+      const stars = avg_rating
+        ? Array.from({length:5},(_,i) =>
+            `<span style="color:${i < Math.round(avg_rating) ? '#F59E0B' : 'var(--border)'}">★</span>`
+          ).join('')
+        : '';
+      document.getElementById('modal-ratings-summary').innerHTML = avg_rating
+        ? `<div style="display:flex;align-items:center;gap:8px">
+             <span style="font-size:1.25rem;font-weight:800;color:var(--text-primary)">${avg_rating}</span>
+             <span style="font-size:1.1rem">${stars}</span>
+             <span style="font-size:0.78rem;color:var(--text-secondary)">${count} review${count !== 1 ? 's' : ''}</span>
+           </div>`
+        : `<span style="font-size:0.82rem;color:var(--text-muted)">No reviews yet — be the first!</span>`;
+
+      // Pre-fill user's own rating
+      if (user_rating) {
+        _pickedStar = user_rating.rating;
+        document.getElementById('rate-comment').value = user_rating.comment || '';
+        document.querySelectorAll('.star-pick').forEach(s => {
+          s.style.color = parseInt(s.dataset.v) <= _pickedStar ? '#F59E0B' : 'var(--border)';
+        });
+      }
+
+      // Reviews list (latest 3)
+      const top = (reviews || []).slice(0, 3);
+      document.getElementById('modal-reviews-list').innerHTML = top.map(r => `
+        <div style="padding:8px 10px;background:var(--bg-secondary);border-radius:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:0.8rem;font-weight:600">${r.user_name || 'User'}</span>
+            <span style="font-size:0.85rem;color:#F59E0B">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+          </div>
+          ${r.comment ? `<div style="font-size:0.8rem;color:var(--text-secondary)">${r.comment}</div>` : ''}
+        </div>`).join('');
+    }
+
+    function toggleRateForm() {
+      const f = document.getElementById('modal-rate-form');
+      f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function pickStar(n) {
+      _pickedStar = n;
+      document.querySelectorAll('.star-pick').forEach(s => {
+        s.style.color = parseInt(s.dataset.v) <= n ? '#F59E0B' : 'var(--border)';
+      });
+    }
+
+    async function submitRating() {
+      if (!_pickedStar) { showToast('Please select a star rating', 'warning'); return; }
+      const comment = document.getElementById('rate-comment').value.trim();
+      try {
+        const result = await API.ratings.submit(_ratingStationId, { rating: _pickedStar, comment });
+        showToast('Rating submitted — thanks!', 'success');
+        toggleRateForm();
+        // Refresh summary
+        renderRatings({ avg_rating: result.avg_rating, count: result.count,
+          user_rating: { rating: _pickedStar, comment }, reviews: [] });
+      } catch (err) {
+        showToast(err.message || 'Could not submit rating', 'error');
+      }
+    }
+
+    window.toggleRateForm = toggleRateForm;
+    window.pickStar = pickStar;
+    window.submitRating = submitRating;
 
     // ── Share Station ──────────────────────────────────
     function shareStation(s) {
@@ -1358,7 +1482,9 @@
 
           applyFilter();
           showNearestBanner();
-          showToast('Location found — showing distances and travel times', 'success', 3000);
+          const accM = Math.round(pos.coords.accuracy);
+          const accLabel = accM < 50 ? `±${accM}m (GPS)` : accM < 500 ? `±${accM}m (WiFi)` : `±${(accM/1000).toFixed(1)}km (coarse)`;
+          showToast(`Location found ${accLabel} — showing distances`, 'success', 4000);
         },
         err => {
           btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>';
@@ -1366,7 +1492,7 @@
           const msgs = { 1: 'Location access denied', 2: 'Location unavailable', 3: 'Location request timed out' };
           showToast(msgs[err.code] || 'Could not get location', 'warning');
         },
-        { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
     }
 

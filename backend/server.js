@@ -90,6 +90,7 @@ app.use('/api/payments',      paymentLimiter);
 // ── Routes ────────────────────────────────────────
 app.use('/api/auth',         require('./routes/auth'));
 app.use('/api/stations',     require('./routes/stations'));
+app.use('/api/stations/:id/ratings', require('./routes/ratings'));
 app.use('/api/fuel-types',   require('./routes/fuel'));
 app.use('/api/vehicles',     require('./routes/vehicles'));
 app.use('/api/transactions', require('./routes/transactions'));
@@ -101,6 +102,8 @@ app.use('/api/upload',       require('./routes/upload'));
 app.use('/api/push',         require('./routes/push'));
 app.use('/api/weather',      require('./routes/weather'));
 app.use('/api/currency',     require('./routes/currency'));
+app.use('/api/alerts',       require('./routes/alerts'));
+app.use('/api/favourites',   require('./routes/favourites'));
 
 // ── Health check ─────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'ok', app: 'FuelGO API', ts: new Date() }));
@@ -113,10 +116,20 @@ app.use((err, req, res, next) => {
 
 // ── Boot ─────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
+const db   = require('./db');
 (async () => {
   try {
     await initDB();
     server.listen(PORT, () => console.log(`FuelGO API running on port ${PORT}`));
+
+    // Hourly price alert check
+    const { checkAndSendAlerts } = require('./routes/alerts');
+    setInterval(async () => {
+      try {
+        const [fuels] = await db.query('SELECT fuel_type_id, price_per_litre FROM fuel_types');
+        for (const f of fuels) checkAndSendAlerts(f.fuel_type_id, f.price_per_litre);
+      } catch (e) { console.error('Alert interval error:', e.message); }
+    }, 3600000);
   } catch (err) {
     console.error('Failed to start server:', err.message);
     process.exit(1);

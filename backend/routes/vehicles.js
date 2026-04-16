@@ -26,12 +26,12 @@ async function resolveFuelTypeId(fuelTypeIdOrName) {
 // POST /api/vehicles
 router.post('/', authMW(), async (req, res) => {
   try {
-    const { plate_number, make, model, year, fuel_type_id, fuel_preference, color } = req.body;
+    const { plate_number, make, model, year, fuel_type_id, fuel_preference, color, tank_size } = req.body;
     if (!plate_number) return res.status(400).json({ error: 'Plate number required' });
     const resolvedFuelId = await resolveFuelTypeId(fuel_type_id || fuel_preference);
     const [r] = await db.query(
-      'INSERT INTO vehicles (user_id, plate_number, make, model, year, fuel_type_id, color) VALUES (?,?,?,?,?,?,?)',
-      [req.user.user_id, plate_number.toUpperCase(), make, model, year, resolvedFuelId, color]
+      'INSERT INTO vehicles (user_id, plate_number, make, model, year, fuel_type_id, color, tank_size) VALUES (?,?,?,?,?,?,?,?)',
+      [req.user.user_id, plate_number.toUpperCase(), make, model, year, resolvedFuelId, color, tank_size || null]
     );
     const [[vehicle]] = await db.query(
       'SELECT v.*, ft.fuel_name FROM vehicles v LEFT JOIN fuel_types ft ON v.fuel_type_id = ft.fuel_type_id WHERE v.vehicle_id = ?',
@@ -44,12 +44,12 @@ router.post('/', authMW(), async (req, res) => {
 // PUT /api/vehicles/:id
 router.put('/:id', authMW(), async (req, res) => {
   try {
-    const { plate_number, make, model, year, fuel_type_id, fuel_preference, color } = req.body;
+    const { plate_number, make, model, year, fuel_type_id, fuel_preference, color, tank_size } = req.body;
     const resolvedFuelId = await resolveFuelTypeId(fuel_type_id || fuel_preference);
     const [result] = await db.query(
-      `UPDATE vehicles SET plate_number=COALESCE(?,plate_number), make=?, model=?, year=?, fuel_type_id=?, color=?
+      `UPDATE vehicles SET plate_number=COALESCE(?,plate_number), make=?, model=?, year=?, fuel_type_id=?, color=?, tank_size=?
        WHERE vehicle_id=? AND user_id=?`,
-      [plate_number?.toUpperCase(), make, model, year, resolvedFuelId, color, req.params.id, req.user.user_id]
+      [plate_number?.toUpperCase(), make, model, year, resolvedFuelId, color, tank_size ?? null, req.params.id, req.user.user_id]
     );
     if (result.affectedRows === 0) return res.status(404).json({ error: 'Vehicle not found' });
     res.json({ success: true });

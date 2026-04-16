@@ -25,6 +25,9 @@ router.put('/:id', authMW(['admin']), async (req, res) => {
     const { price_per_litre } = req.body;
     await db.query('UPDATE fuel_types SET price_per_litre=? WHERE fuel_type_id=?', [price_per_litre, req.params.id]);
     cache.invalidate('fuel:all');
+    // Non-blocking alert check
+    const { checkAndSendAlerts } = require('./alerts');
+    checkAndSendAlerts(req.params.id, price_per_litre);
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

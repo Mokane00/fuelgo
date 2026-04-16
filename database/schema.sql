@@ -126,3 +126,46 @@ CREATE INDEX IF NOT EXISTS idx_txn_user    ON transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_txn_station ON transactions(station_id);
 CREATE INDEX IF NOT EXISTS idx_txn_date    ON transactions(transaction_date);
 CREATE INDEX IF NOT EXISTS idx_pumps_st    ON pumps(station_id);
+
+-- ── Price Alerts ───────────────────────────────
+CREATE TABLE IF NOT EXISTS price_alerts (
+  alert_id         INT AUTO_INCREMENT PRIMARY KEY,
+  user_id          INT NOT NULL,
+  fuel_type_id     INT NOT NULL,
+  threshold_price  DECIMAL(10,2) NOT NULL,
+  is_active        TINYINT(1) DEFAULT 1,
+  last_triggered_at TIMESTAMP NULL,
+  created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id)      REFERENCES users(user_id)      ON DELETE CASCADE,
+  FOREIGN KEY (fuel_type_id) REFERENCES fuel_types(fuel_type_id)
+);
+
+-- ── Station Ratings ────────────────────────────
+CREATE TABLE IF NOT EXISTS station_ratings (
+  rating_id  INT AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT NOT NULL,
+  station_id INT NOT NULL,
+  rating     TINYINT NOT NULL,
+  comment    VARCHAR(500),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_user_station_rat (user_id, station_id),
+  FOREIGN KEY (user_id)    REFERENCES users(user_id)    ON DELETE CASCADE,
+  FOREIGN KEY (station_id) REFERENCES stations(station_id) ON DELETE CASCADE
+);
+
+-- ── User Favourites ────────────────────────────
+CREATE TABLE IF NOT EXISTS user_favourites (
+  fav_id     INT AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT NOT NULL,
+  station_id INT NOT NULL,
+  label      ENUM('home','work','other') DEFAULT 'other',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_user_station_fav (user_id, station_id),
+  FOREIGN KEY (user_id)    REFERENCES users(user_id)    ON DELETE CASCADE,
+  FOREIGN KEY (station_id) REFERENCES stations(station_id) ON DELETE CASCADE
+);
+
+-- ── New columns (safe to re-run) ───────────────
+ALTER TABLE vehicles    ADD COLUMN IF NOT EXISTS tank_size   DECIMAL(5,1)  DEFAULT NULL;
+ALTER TABLE users       ADD COLUMN IF NOT EXISTS fuel_budget DECIMAL(10,2) DEFAULT NULL;
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS co2_kg     DECIMAL(8,4)  DEFAULT NULL;
