@@ -809,8 +809,7 @@
       navigator.geolocation.getCurrentPosition(async pos => {
         try {
           const { latitude: lat, longitude: lng } = pos.coords;
-          const stations = await fetch(`/api/stations/nearest?lat=${lat}&lng=${lng}`)
-            .then(r => r.ok ? r.json() : null);
+          const stations = await API.request('GET', `/stations/nearest?lat=${lat}&lng=${lng}`).catch(() => null);
           if (!stations?.length) return;
           // Pick the first open station
           const open = stations.find(s => s.is_open) || stations[0];

@@ -24,8 +24,8 @@ router.get('/', async (req, res) => {
 router.get('/locate', async (req, res) => {
   const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress;
   const loc = await getLocationFromIP(ip === '::1' || ip === '127.0.0.1' ? '196.212.0.1' : ip);
-  if (!loc) return res.status(503).json({ error: 'Location service unavailable' });
-  res.json(loc);
+  // Fall back to Maseru (capital of Lesotho) so dashboard weather always loads
+  res.json(loc || { city: 'Maseru', region: 'Maseru', country: 'Lesotho', latitude: -29.3167, longitude: 27.4833 });
 });
 
 module.exports = router;
