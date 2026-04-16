@@ -1,6 +1,6 @@
-// FuelGO Service Worker — v2.4
+// FuelGO Service Worker — v2.5
 // Strategies: HTML → network-first | CSS/JS/assets → cache-first | API/external → network-only
-const CACHE_VERSION = 'fuelgo-v6';
+const CACHE_VERSION = 'fuelgo-v7';
 const STATIC_CACHE  = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 
@@ -30,18 +30,21 @@ self.addEventListener('install', e => {
   self.skipWaiting();
 });
 
-// ── Activate: clean up ALL old caches ──────────────
+// ── Activate: wipe ALL old caches, then reload every open tab ──
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
+    caches.keys()
+      .then(keys => Promise.all(
         keys
           .filter(k => k !== STATIC_CACHE && k !== DYNAMIC_CACHE)
           .map(k => caches.delete(k))
-      )
-    )
+      ))
+      .then(() => self.clients.claim())
+      .then(() => self.clients.matchAll({ type: 'window' }))
+      .then(clients => Promise.all(
+        clients.map(client => client.navigate(client.url))
+      ))
   );
-  self.clients.claim();
 });
 
 // ── Fetch: routing strategy ─────────────────────────
