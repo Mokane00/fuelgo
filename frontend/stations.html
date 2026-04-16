@@ -1516,16 +1516,21 @@
 
   <!-- Google Maps JS API — key is loaded from backend env, not hardcoded here -->
   <script>
+    window.gm_authFailure = function() {
+      console.error('[Maps] Auth failure — API key invalid or domain not authorized');
+      const loader = document.getElementById('map-loading');
+      if (loader) loader.innerHTML = `<div style="text-align:center;padding:20px"><div style="font-size:2rem;margin-bottom:10px">🗺️</div><div style="font-weight:700;color:var(--danger);margin-bottom:6px">Maps auth failed</div><div style="font-size:0.82rem;color:var(--text-secondary)">Check API key restrictions in Google Cloud Console.</div></div>`;
+    };
     fetch('/api/payments/maps-config')
       .then(r => r.json())
       .then(cfg => {
-        if (!cfg.maps_key) { console.warn('Google Maps key not configured in backend .env'); return; }
+        if (!cfg.maps_key) { console.warn('Google Maps key not configured'); return; }
         const s = document.createElement('script');
-        s.defer = true;
-        s.src = `https://maps.googleapis.com/maps/api/js?key=${cfg.maps_key}&libraries=geometry,marker&loading=async&callback=initMap`;
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${cfg.maps_key}&libraries=geometry,marker&callback=initMap&v=weekly`;
+        s.onerror = () => console.error('[Maps] Failed to load Maps JS script');
         document.head.appendChild(s);
       })
-      .catch(() => console.warn('Could not load Maps config from backend'));
+      .catch(e => console.warn('Could not load Maps config:', e));
   </script>
 </body>
 </html>
