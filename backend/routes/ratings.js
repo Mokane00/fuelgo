@@ -54,7 +54,7 @@ router.post('/', authMW(), async (req, res) => {
     );
 
     // Invalidate station cache
-    cache.invalidate(`station:${sid}`);
+    cache.invalidate(`stations:${sid}`);
 
     const [[agg]] = await db.query(
       'SELECT AVG(rating) AS avg_rating, COUNT(*) AS count FROM station_ratings WHERE station_id = ?',

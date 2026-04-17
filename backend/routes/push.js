@@ -23,7 +23,7 @@ router.post('/subscribe', authMW(), async (req, res) => {
  * POST /api/push/send  (admin only — manual blast)
  * Body: { user_id?, title, body, data? }
  */
-router.post('/send', authMW('admin'), async (req, res) => {
+router.post('/send', authMW(['admin']), async (req, res) => {
   const { user_id, title, body, data } = req.body;
   if (!title || !body) return res.status(400).json({ error: 'title and body required' });
 

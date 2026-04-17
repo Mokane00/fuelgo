@@ -23,8 +23,8 @@ router.get('/', authMW(), async (req, res) => {
       [req.user.user_id]
     );
 
-    // Compute is_open for each station
-    const now = new Date();
+    // Compute is_open for each station (Lesotho time = UTC+2)
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Maseru' }));
     const hhmm = now.getHours() * 60 + now.getMinutes();
     const enriched = rows.map(r => {
       let is_open = r.status === 'active';

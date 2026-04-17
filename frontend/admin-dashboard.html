@@ -632,8 +632,9 @@
         full_name:  `${first} ${last}`,
         email,
         phone:      document.getElementById('emp-phone').value.trim() || undefined,
-        station_id: parseInt(document.getElementById('emp-station').value),
+        station_id: parseInt(document.getElementById('emp-station').value) || undefined,
         role:       document.getElementById('emp-role').value,
+        password:   document.getElementById('emp-password').value.trim() || undefined,
       };
       try {
         await API.admin.addEmployee(data);

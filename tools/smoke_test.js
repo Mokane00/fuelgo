@@ -17,7 +17,7 @@ const puppeteer = require('puppeteer');
     page.on('pageerror', err => console.log('[PAGEERR]', err.message));
 
     // Open the site
-    await page.goto('http://localhost:5000', { waitUntil: 'domcontentloaded' });
+    await page.goto('http://localhost:5001', { waitUntil: 'domcontentloaded' });
     result.details.url = page.url();
 
     // Wait for login fields
