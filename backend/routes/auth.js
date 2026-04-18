@@ -100,7 +100,7 @@ router.post('/register', async (req, res) => {
 router.get('/me', authMW(), async (req, res) => {
   try {
     const [[user]] = await db.query(
-      'SELECT user_id, full_name, email, phone, role, station_id, avatar_url, google_id, fuel_budget, created_at FROM users WHERE user_id = ?',
+      'SELECT user_id, full_name, email, phone, role, station_id, avatar_url, google_id, created_at FROM users WHERE user_id = ?',
       [req.user.user_id]
     );
     if (!user) return res.status(404).json({ error: 'User not found' });

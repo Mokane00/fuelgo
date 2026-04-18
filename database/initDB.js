@@ -40,9 +40,12 @@ async function initDB() {
     ) ENGINE=InnoDB`);
 
     // Add new columns to existing tables if they don't exist
-    await conn.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(100) NULL`).catch(() => {});
-    await conn.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500) NULL`).catch(() => {});
-    await conn.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS fcm_token VARCHAR(500) NULL`).catch(() => {});
+    // Note: no IF NOT EXISTS — works on MySQL 5.7+ via .catch() silencing duplicate-column errors
+    await conn.query(`ALTER TABLE users ADD COLUMN google_id VARCHAR(100) NULL`).catch(() => {});
+    await conn.query(`ALTER TABLE users ADD COLUMN avatar_url VARCHAR(500) NULL`).catch(() => {});
+    await conn.query(`ALTER TABLE users ADD COLUMN fcm_token VARCHAR(500) NULL`).catch(() => {});
+    await conn.query(`ALTER TABLE users ADD COLUMN fuel_budget DECIMAL(10,2) NULL`).catch(() => {});
+    await conn.query(`ALTER TABLE vehicles ADD COLUMN tank_size DECIMAL(6,1) NULL`).catch(() => {});
 
     await conn.query(`CREATE TABLE IF NOT EXISTS stations (
       station_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -101,6 +104,7 @@ async function initDB() {
       payment_method ENUM('mobile_money','card','wallet','cash') DEFAULT 'mobile_money',
       points_earned INT DEFAULT 0,
       transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      co2_kg DECIMAL(10,2) DEFAULT NULL,
       status ENUM('pending','completed','failed','refunded') DEFAULT 'completed',
       FOREIGN KEY (user_id) REFERENCES users(user_id),
       FOREIGN KEY (station_id) REFERENCES stations(station_id),
@@ -135,6 +139,47 @@ async function initDB() {
       is_active TINYINT(1) DEFAULT 1,
       stock INT DEFAULT 100
     ) ENGINE=InnoDB`);
+
+    await conn.query(`CREATE TABLE IF NOT EXISTS price_alerts (
+      alert_id INT PRIMARY KEY AUTO_INCREMENT,
+      user_id INT NOT NULL,
+      fuel_type_id INT NOT NULL,
+      threshold_price DECIMAL(10,2) NOT NULL,
+      is_active TINYINT(1) DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      last_triggered_at TIMESTAMP NULL,
+      FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+      FOREIGN KEY (fuel_type_id) REFERENCES fuel_types(fuel_type_id)
+    ) ENGINE=InnoDB`);
+
+    await conn.query(`CREATE TABLE IF NOT EXISTS user_favourites (
+      fav_id INT PRIMARY KEY AUTO_INCREMENT,
+      user_id INT NOT NULL,
+      station_id INT NOT NULL,
+      label ENUM('home','work','other') DEFAULT 'other',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY unique_user_station (user_id, station_id),
+      FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+      FOREIGN KEY (station_id) REFERENCES stations(station_id) ON DELETE CASCADE
+    ) ENGINE=InnoDB`);
+
+    await conn.query(`CREATE TABLE IF NOT EXISTS station_ratings (
+      rating_id INT PRIMARY KEY AUTO_INCREMENT,
+      user_id INT NOT NULL,
+      station_id INT NOT NULL,
+      rating TINYINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+      comment TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY unique_user_station_rating (user_id, station_id),
+      FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+      FOREIGN KEY (station_id) REFERENCES stations(station_id) ON DELETE CASCADE
+    ) ENGINE=InnoDB`);
+
+    // ALTER existing tables to add columns that may be missing on older DBs
+    const alters = [
+      "ALTER TABLE transactions ADD COLUMN co2_kg DECIMAL(10,2) DEFAULT NULL",
+    ];
+    for (const q of alters) { try { await conn.query(q); } catch {} }
 
     // Indexes
     const idxQueries = [

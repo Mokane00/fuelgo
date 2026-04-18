@@ -12,13 +12,14 @@ router.get('/', authMW(), async (req, res) => {
     const [rows] = await db.query(
       `SELECT f.fav_id, f.station_id, f.label, f.created_at,
          s.station_name, s.district, s.location, s.status, s.opening_hours, s.latitude, s.longitude,
-         ft.fuel_name, ft.price_per_litre
+         ANY_VALUE(ft.fuel_name) AS fuel_name, ANY_VALUE(ft.price_per_litre) AS price_per_litre
        FROM user_favourites f
        JOIN stations s ON f.station_id = s.station_id
        LEFT JOIN pumps p ON p.station_id = s.station_id
        LEFT JOIN fuel_types ft ON p.fuel_type_id = ft.fuel_type_id AND ft.fuel_name = 'Petrol'
        WHERE f.user_id = ?
-       GROUP BY f.fav_id
+       GROUP BY f.fav_id, f.station_id, f.label, f.created_at,
+                s.station_name, s.district, s.location, s.status, s.opening_hours, s.latitude, s.longitude
        ORDER BY f.created_at DESC`,
       [req.user.user_id]
     );

@@ -37,7 +37,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc:    ["'self'"],
-      scriptSrc:     ["'self'", "cdnjs.cloudflare.com", "unpkg.com", "cdn.jsdelivr.net", "js.stripe.com", "maps.googleapis.com", "'unsafe-inline'"],
+      scriptSrc:     ["'self'", "cdnjs.cloudflare.com", "unpkg.com", "cdn.jsdelivr.net", "js.stripe.com", "maps.googleapis.com", "www.gstatic.com", "apis.google.com", "'unsafe-inline'"],
       // Allow inline event handlers (onclick, oninput, etc.) throughout the app
       scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc:      ["'self'", "'unsafe-inline'", "fonts.googleapis.com", "cdnjs.cloudflare.com"],

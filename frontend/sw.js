@@ -1,6 +1,6 @@
-// FuelGO Service Worker — v2.5
+// FuelGO Service Worker — v2.6
 // Strategies: HTML → network-first | CSS/JS/assets → cache-first | API/external → network-only
-const CACHE_VERSION = 'fuelgo-v7';
+const CACHE_VERSION = 'fuelgo-v8';
 const STATIC_CACHE  = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 
@@ -49,6 +49,9 @@ self.addEventListener('activate', e => {
 
 // ── Fetch: routing strategy ─────────────────────────
 self.addEventListener('fetch', e => {
+  // Cache API does not support non-GET requests — pass them straight through
+  if (e.request.method !== 'GET') return;
+
   const url = new URL(e.request.url);
 
   // 1. API calls: network-only

@@ -7,7 +7,7 @@ const { sendPush } = require('../utils/firebase');
 const { getCarbonEstimate } = require('../utils/carbon');
 
 const TXN_SELECT = `
-  SELECT t.*, t.co2_kg,
+  SELECT t.*,
     s.station_name, s.location AS station_location,
     ft.fuel_name,
     v.plate_number, v.make, v.model AS vehicle_model,

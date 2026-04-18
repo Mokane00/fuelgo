@@ -148,7 +148,7 @@ router.get('/reports/loyalty', authMW(['admin']), async (req, res) => {
       FROM users u
       JOIN    loyalty              l  ON l.user_id  = u.user_id
       LEFT JOIN transactions       t  ON t.user_id  = u.user_id
-      LEFT JOIN loyalty_transactions lt ON lt.user_id = u.user_id AND lt.type = 'earn'
+      LEFT JOIN loyalty_transactions lt ON lt.user_id = u.user_id AND lt.type = 'earned'
       WHERE u.role = 'customer'
       GROUP BY u.user_id, l.points_balance, l.tier, l.total_spent
       ORDER BY l.total_spent DESC`);
