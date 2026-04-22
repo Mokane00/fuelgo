@@ -27,7 +27,7 @@ router.post('/avatar', authMW(), upload.single('avatar'), async (req, res) => {
       [url, req.user.user_id]
     );
 
-    res.json({ avatar_url: url, public_id });
+    res.json({ url, avatar_url: url, public_id });
   } catch (err) {
     console.error('Upload error:', err.message);
     res.status(500).json({ error: err.message });

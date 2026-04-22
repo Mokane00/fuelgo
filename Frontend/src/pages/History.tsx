@@ -87,7 +87,7 @@ export default function History() {
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input className="input pl-9" placeholder="Search by station or fuel…" value={search} onChange={e => setSearch(e.target.value)} />
+        <input id="history-search" name="search" className="input pl-9" placeholder="Search by station or fuel…" value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
       {/* Table */}

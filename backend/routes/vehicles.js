@@ -6,7 +6,7 @@ const authMW = require('../middleware/auth');
 router.get('/', authMW(), async (req, res) => {
   try {
     const [vehicles] = await db.query(
-      `SELECT v.*, ft.fuel_name
+      `SELECT v.*, ft.fuel_name, COALESCE(v.is_default, 0) AS is_default
        FROM vehicles v LEFT JOIN fuel_types ft ON v.fuel_type_id = ft.fuel_type_id
        WHERE v.user_id = ? ORDER BY v.created_at DESC`,
       [req.user.user_id]
@@ -50,6 +50,24 @@ router.put('/:id', authMW(), async (req, res) => {
       `UPDATE vehicles SET plate_number=COALESCE(?,plate_number), make=?, model=?, year=?, fuel_type_id=?, color=?, tank_size=?
        WHERE vehicle_id=? AND user_id=?`,
       [plate_number?.toUpperCase(), make, model, year, resolvedFuelId, color, tank_size ?? null, req.params.id, req.user.user_id]
+    );
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Vehicle not found' });
+    const [[vehicle]] = await db.query(
+      'SELECT v.*, ft.fuel_name, COALESCE(v.is_default,0) AS is_default FROM vehicles v LEFT JOIN fuel_types ft ON v.fuel_type_id=ft.fuel_type_id WHERE v.vehicle_id=?',
+      [req.params.id]
+    );
+    res.json(vehicle);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PUT /api/vehicles/:id/default
+router.put('/:id/default', authMW(), async (req, res) => {
+  try {
+    // Clear existing default for this user, then set new default
+    await db.query('UPDATE vehicles SET is_default=0 WHERE user_id=?', [req.user.user_id]);
+    const [result] = await db.query(
+      'UPDATE vehicles SET is_default=1 WHERE vehicle_id=? AND user_id=?',
+      [req.params.id, req.user.user_id]
     );
     if (result.affectedRows === 0) return res.status(404).json({ error: 'Vehicle not found' });
     res.json({ success: true });

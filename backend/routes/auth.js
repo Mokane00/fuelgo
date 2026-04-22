@@ -10,6 +10,7 @@ const jwt      = require('jsonwebtoken');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const authMW   = require('../middleware/auth');
+const audit    = require('../middleware/audit');
 const { sanitizeUser, isValidEmail, validatePassword } = require('../utils/sanitize');
 const { sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/email');
 
@@ -54,8 +55,14 @@ router.post('/login', async (req, res) => {
     if (!user) return res.status(401).json({ error: 'Invalid email or password' });
 
     const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) return res.status(401).json({ error: 'Invalid email or password' });
+    if (!valid) {
+      await audit({ req, action: 'LOGIN_FAILED', targetType: 'user', targetLabel: email.toLowerCase().trim(), metadata: { reason: 'bad_password' } });
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
 
+    // Fake req.user so audit captures the actor correctly
+    req.user = { id: user.user_id, email: user.email, role: user.role };
+    await audit({ req, action: 'LOGIN_SUCCESS', targetType: 'user', targetId: user.user_id, targetLabel: user.email });
     res.json({ token: makeToken(user), user: buildUserResponse(user) });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -242,12 +249,10 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 // GET /api/auth/google/callback — handle callback
 const FE_URL = process.env.FRONTEND_URL || 'http://localhost:5000';
 router.get('/google/callback',
-  passport.authenticate('google', { session: false, failureRedirect: `${FE_URL}/index.html?error=oauth_failed` }),
+  passport.authenticate('google', { session: false, failureRedirect: `${FE_URL}/?error=oauth_failed` }),
   (req, res) => {
     const token = makeToken(req.user);
-    const user  = JSON.stringify(buildUserResponse(req.user));
-    const encoded = encodeURIComponent(user);
-    res.redirect(`${FE_URL}/index.html?token=${token}&user=${encoded}`);
+    res.redirect(`${FE_URL}/?token=${token}`);
   }
 );
 

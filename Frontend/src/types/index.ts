@@ -78,7 +78,7 @@ export interface Transaction {
   litres: number;
   amount: number;
   price_per_litre: number;
-  payment_method: 'card' | 'wallet' | 'loyalty';
+  payment_method: 'mobile_money' | 'card' | 'wallet' | 'cash';
   status: 'pending' | 'completed' | 'failed' | 'refunded';
   points_earned?: number;
   created_at: string;
@@ -112,7 +112,9 @@ export interface LoyaltyInfo {
 export interface AdminOverview {
   total_stations: number;
   total_customers: number;
+  total_employees: number;
   transactions_today: number;
+  revenue_today: number;
   revenue_this_month: number;
   total_revenue_all_time: number;
   daily_revenue: { date: string; revenue: number }[];

@@ -63,7 +63,12 @@ export const authApi = {
     request<{ token: string; user: unknown }>('POST', '/auth/login', { email, password }),
 
   register: (data: { name: string; email: string; password: string; phone?: string }) =>
-    request<{ token: string; user: unknown }>('POST', '/auth/register', data),
+    request<{ token: string; user: unknown }>('POST', '/auth/register', {
+      full_name: data.name,
+      email: data.email,
+      password: data.password,
+      phone: data.phone,
+    }),
 
   me: () => request<unknown>('GET', '/auth/me'),
 
@@ -84,7 +89,7 @@ export const authApi = {
     request<{ message: string }>('POST', '/auth/forgot-password', { email }),
 
   resetPassword: (email: string, code: string, password: string) =>
-    request<{ message: string }>('POST', '/auth/reset-password', { email, code, password }),
+    request<{ message: string }>('POST', '/auth/reset-password', { email, code, new_password: password }),
 };
 
 // ─── Station normaliser (backend uses different field names) ──────────────────
@@ -203,7 +208,7 @@ export const transactionsApi = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return { transactions: arr.map((t: any) => normaliseTransaction(t)), total };
   },
-  get: (id: number) => request<Transaction>('GET', `/transactions/${id}`),
+  get: async (id: number) => normaliseTransaction(await request<unknown>('GET', `/transactions/${id}`)),
   create: (data: {
     pump_id?: number;
     station_id: number;
@@ -344,7 +349,7 @@ export interface AuditLog {
 export const employeeApi = {
   dashboard: () => request<unknown>('GET', '/employee/dashboard'),
   updatePump: (id: number, status: string) =>
-    request<unknown>('PUT', `/employee/pumps/${id}`, { status }),
+    request<unknown>('PUT', `/employee/pumps/${id}/status`, { status }),
 };
 
 // ─── Upload ───────────────────────────────────────────────────────────────────

@@ -1,12 +1,12 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Users, MapPin, BarChart3, Shield, Trash2, Edit3, Plus, Search, ClipboardList, ChevronLeft, ChevronRight } from 'lucide-react';
-import { adminApi } from '../api/api';
+import { BarChart3, ChevronLeft, ChevronRight, ClipboardList, Edit3, MapPin, Plus, Search, Shield, Trash2, Users } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import type { AuditLog } from '../api/api';
-import { useToast } from '../context/ToastContext';
-import { StatCard } from '../components/ui/StatCard';
-import { Card } from '../components/ui/Card';
+import { adminApi } from '../api/api';
 import { Badge } from '../components/ui/Badge';
+import { Card } from '../components/ui/Card';
 import { Modal } from '../components/ui/Modal';
+import { StatCard } from '../components/ui/StatCard';
+import { useToast } from '../context/ToastContext';
 import type { AdminOverview, Station, User } from '../types';
 
 type Tab = 'overview' | 'users' | 'stations' | 'audit';
@@ -35,27 +35,27 @@ const emptyUserForm = (): UserForm => ({
 
 export default function Admin() {
   const toast = useToast();
-  const [tab, setTab]           = useState<Tab>('overview');
+  const [tab, setTab] = useState<Tab>('overview');
   const [overview, setOverview] = useState<AdminOverview | null>(null);
-  const [users, setUsers]       = useState<AdminUser[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [search, setSearch]     = useState('');
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
-  const [userForm, setUserForm]       = useState<UserForm | null>(null);
+  const [userForm, setUserForm] = useState<UserForm | null>(null);
   const [editStation, setEditStation] = useState<Partial<Station> | null>(null);
   const [stationModalOpen, setStationModal] = useState(false);
-  const [saving, setSaving]           = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Audit state
-  const [auditLogs, setAuditLogs]       = useState<AuditLog[]>([]);
-  const [auditTotal, setAuditTotal]     = useState(0);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [auditTotal, setAuditTotal] = useState(0);
   const [auditActions, setAuditActions] = useState<string[]>([]);
-  const [auditPage, setAuditPage]       = useState(1);
-  const [auditSearch, setAuditSearch]   = useState('');
-  const [auditAction, setAuditAction]   = useState('');
-  const [auditFrom, setAuditFrom]       = useState('');
-  const [auditTo, setAuditTo]           = useState('');
+  const [auditPage, setAuditPage] = useState(1);
+  const [auditSearch, setAuditSearch] = useState('');
+  const [auditAction, setAuditAction] = useState('');
+  const [auditFrom, setAuditFrom] = useState('');
+  const [auditTo, setAuditTo] = useState('');
   const AUDIT_LIMIT = 50;
 
   const loadAudit = useCallback(async (page = auditPage) => {
@@ -71,7 +71,7 @@ export default function Admin() {
 
   // Load stations once on mount so the station dropdown is always available
   useEffect(() => {
-    adminApi.stations().then(setStations).catch(() => {});
+    adminApi.stations().then(setStations).catch(() => { });
   }, []);
 
   const load = useCallback(async (t: Tab) => {
@@ -171,10 +171,10 @@ export default function Admin() {
   }
 
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'overview',  label: 'Overview',  icon: <BarChart3 className="w-4 h-4" /> },
-    { id: 'users',     label: 'Users',     icon: <Users className="w-4 h-4" /> },
-    { id: 'stations',  label: 'Stations',  icon: <MapPin className="w-4 h-4" /> },
-    { id: 'audit',     label: 'Audit Log', icon: <ClipboardList className="w-4 h-4" /> },
+    { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
+    { id: 'users', label: 'Users', icon: <Users className="w-4 h-4" /> },
+    { id: 'stations', label: 'Stations', icon: <MapPin className="w-4 h-4" /> },
+    { id: 'audit', label: 'Audit Log', icon: <ClipboardList className="w-4 h-4" /> },
   ];
 
   return (
@@ -190,11 +190,10 @@ export default function Admin() {
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
-              tab === t.id
-                ? 'border-primary text-primary dark:text-blue-300'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${tab === t.id
+              ? 'border-primary text-primary dark:text-blue-300'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              }`}
           >
             {t.icon} {t.label}
           </button>
@@ -206,9 +205,9 @@ export default function Admin() {
         loading ? <LoadingGrid /> : overview ? (
           <div className="space-y-5">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard label="Total Stations"    value={overview.total_stations}         icon={<MapPin className="w-5 h-5" />} />
-              <StatCard label="Total Customers"   value={overview.total_customers}        icon={<Users className="w-5 h-5" />} />
-              <StatCard label="Txns Today"        value={overview.transactions_today}     icon={<BarChart3 className="w-5 h-5" />} />
+              <StatCard label="Total Stations" value={overview.total_stations} icon={<MapPin className="w-5 h-5" />} />
+              <StatCard label="Total Customers" value={overview.total_customers} icon={<Users className="w-5 h-5" />} />
+              <StatCard label="Txns Today" value={overview.transactions_today} icon={<BarChart3 className="w-5 h-5" />} />
               <StatCard label="Revenue This Month" value={`M${Number(overview.revenue_this_month).toFixed(2)}`} icon={<BarChart3 className="w-5 h-5" />} />
             </div>
 
@@ -245,7 +244,7 @@ export default function Admin() {
           <div className="flex gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input className="input pl-9" placeholder="Search users…" value={search} onChange={e => setSearch(e.target.value)} />
+              <input id="users-search" name="users_search" className="input pl-9" placeholder="Search users…" value={search} onChange={e => setSearch(e.target.value)} />
             </div>
             <button onClick={() => load('users')} className="btn-outline btn-sm">Search</button>
             <button onClick={openCreateUser} className="btn-primary btn-sm">
@@ -353,14 +352,14 @@ export default function Admin() {
             <div className="flex flex-wrap gap-3">
               <div className="relative flex-1 min-w-[160px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input className="input pl-9" placeholder="Search actor / target…" value={auditSearch} onChange={e => setAuditSearch(e.target.value)} />
+                <input id="audit-search" name="audit_search" className="input pl-9" placeholder="Search actor / target…" value={auditSearch} onChange={e => setAuditSearch(e.target.value)} />
               </div>
               <select id="audit-action" name="audit_action" className="input w-44" value={auditAction} onChange={e => setAuditAction(e.target.value)}>
                 <option value="">All actions</option>
                 {auditActions.map(a => <option key={a} value={a}>{a}</option>)}
               </select>
-              <input type="date" className="input w-36" value={auditFrom} onChange={e => setAuditFrom(e.target.value)} />
-              <input type="date" className="input w-36" value={auditTo}   onChange={e => setAuditTo(e.target.value)} />
+              <input id="audit-from" name="audit_from" type="date" className="input w-36" value={auditFrom} onChange={e => setAuditFrom(e.target.value)} />
+              <input id="audit-to" name="audit_to" type="date" className="input w-36" value={auditTo} onChange={e => setAuditTo(e.target.value)} />
               <button className="btn-primary btn-sm" onClick={() => { setAuditPage(1); loadAudit(1); }}>Filter</button>
             </div>
           </Card>
@@ -563,9 +562,9 @@ function LoadingGrid() {
 function ActionBadge({ action }: { action: string }) {
   const variant =
     action.startsWith('DELETE') ? 'danger' :
-    action.startsWith('CREATE') ? 'success' :
-    action.startsWith('LOGIN_FAILED') ? 'danger' :
-    action.startsWith('LOGIN') ? 'primary' :
-    'accent';
+      action.startsWith('CREATE') ? 'success' :
+        action.startsWith('LOGIN_FAILED') ? 'danger' :
+          action.startsWith('LOGIN') ? 'primary' :
+            'accent';
   return <Badge variant={variant}>{action}</Badge>;
 }

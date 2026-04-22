@@ -25,15 +25,22 @@ const TXN_SELECT = `
 router.get('/', authMW(), async (req, res) => {
   try {
     const { role, user_id, station_id } = req.user;
-    let rows;
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+    const offset = (page - 1) * limit;
+
+    let rows, total;
     if (role === 'admin') {
-      [rows] = await db.query(`${TXN_SELECT} ORDER BY t.transaction_date DESC LIMIT 1000`);
+      [[{ total }]] = await db.query('SELECT COUNT(*) AS total FROM transactions');
+      [rows] = await db.query(`${TXN_SELECT} ORDER BY t.transaction_date DESC LIMIT ? OFFSET ?`, [limit, offset]);
     } else if (role === 'employee') {
-      [rows] = await db.query(`${TXN_SELECT} WHERE t.station_id = ? ORDER BY t.transaction_date DESC LIMIT 300`, [station_id]);
+      [[{ total }]] = await db.query('SELECT COUNT(*) AS total FROM transactions WHERE station_id=?', [station_id]);
+      [rows] = await db.query(`${TXN_SELECT} WHERE t.station_id = ? ORDER BY t.transaction_date DESC LIMIT ? OFFSET ?`, [station_id, limit, offset]);
     } else {
-      [rows] = await db.query(`${TXN_SELECT} WHERE t.user_id = ? ORDER BY t.transaction_date DESC`, [user_id]);
+      [[{ total }]] = await db.query('SELECT COUNT(*) AS total FROM transactions WHERE user_id=?', [user_id]);
+      [rows] = await db.query(`${TXN_SELECT} WHERE t.user_id = ? ORDER BY t.transaction_date DESC LIMIT ? OFFSET ?`, [user_id, limit, offset]);
     }
-    res.json(rows);
+    res.json({ transactions: rows, total, page, limit });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

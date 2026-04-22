@@ -45,7 +45,9 @@ async function initDB() {
     await conn.query(`ALTER TABLE users ADD COLUMN avatar_url VARCHAR(500) NULL`).catch(() => {});
     await conn.query(`ALTER TABLE users ADD COLUMN fcm_token VARCHAR(500) NULL`).catch(() => {});
     await conn.query(`ALTER TABLE users ADD COLUMN fuel_budget DECIMAL(10,2) NULL`).catch(() => {});
+    await conn.query(`ALTER TABLE users ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1`).catch(() => {});
     await conn.query(`ALTER TABLE vehicles ADD COLUMN tank_size DECIMAL(6,1) NULL`).catch(() => {});
+    await conn.query(`ALTER TABLE vehicles ADD COLUMN is_default TINYINT(1) NOT NULL DEFAULT 0`).catch(() => {});
 
     await conn.query(`CREATE TABLE IF NOT EXISTS stations (
       station_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -86,6 +88,8 @@ async function initDB() {
       year SMALLINT,
       fuel_type_id INT,
       color VARCHAR(40),
+      tank_size DECIMAL(6,1) NULL,
+      is_default TINYINT(1) NOT NULL DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
       FOREIGN KEY (fuel_type_id) REFERENCES fuel_types(fuel_type_id)
@@ -173,6 +177,24 @@ async function initDB() {
       UNIQUE KEY unique_user_station_rating (user_id, station_id),
       FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
       FOREIGN KEY (station_id) REFERENCES stations(station_id) ON DELETE CASCADE
+    ) ENGINE=InnoDB`);
+
+    await conn.query(`CREATE TABLE IF NOT EXISTS audit_logs (
+      log_id       INT PRIMARY KEY AUTO_INCREMENT,
+      actor_id     INT NULL,
+      actor_email  VARCHAR(100) NOT NULL DEFAULT '',
+      actor_role   VARCHAR(20)  NOT NULL DEFAULT '',
+      action       VARCHAR(60)  NOT NULL,
+      target_type  VARCHAR(40)  NOT NULL DEFAULT '',
+      target_id    INT NULL,
+      target_label VARCHAR(200) NOT NULL DEFAULT '',
+      ip_address   VARCHAR(45)  NOT NULL DEFAULT '',
+      metadata     JSON         NULL,
+      created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (actor_id) REFERENCES users(user_id) ON DELETE SET NULL,
+      INDEX idx_al_actor  (actor_id),
+      INDEX idx_al_action (action),
+      INDEX idx_al_ts     (created_at)
     ) ENGINE=InnoDB`);
 
     // ALTER existing tables to add columns that may be missing on older DBs

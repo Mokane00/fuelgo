@@ -104,8 +104,15 @@ export default function PumpPage() {
       if (def) { setVehicleId(def.id); setFuelTypeId(def.fuel_type_id); }
     });
 
-    // Socket.io
-    const sock = io(window.location.origin);
+    // Socket.io — configure transports so polling fallback works when WS is blocked
+    const sock = io(window.location.origin, {
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 3,
+      timeout: 10000,
+    });
+    sock.on('connect_error', (err) => {
+      console.warn('Socket connect error:', err.message);
+    });
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSocket(sock);
     return () => { sock.disconnect(); };
@@ -213,10 +220,10 @@ export default function PumpPage() {
                       }}
                       disabled={p.status !== 'available'}
                       className={`py-3 px-2 rounded-sm border text-sm font-medium transition-all ${pumpId === p.id
-                          ? 'border-primary bg-primary/10 text-primary dark:text-blue-300'
-                          : p.status === 'available'
-                            ? 'border-border dark:border-white/20 hover:border-primary/50'
-                            : 'border-border dark:border-white/10 text-gray-300 dark:text-gray-600 bg-surface-alt dark:bg-bg cursor-not-allowed'
+                        ? 'border-primary bg-primary/10 text-primary dark:text-blue-300'
+                        : p.status === 'available'
+                          ? 'border-border dark:border-white/20 hover:border-primary/50'
+                          : 'border-border dark:border-white/10 text-gray-300 dark:text-gray-600 bg-surface-alt dark:bg-bg cursor-not-allowed'
                         }`}
                     >
                       <span className="block font-bold">#{p.pump_number}</span>

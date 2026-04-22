@@ -7,6 +7,7 @@ const router = require('express').Router();
 const db     = require('../db');
 const authMW = require('../middleware/auth');
 const cache  = require('../utils/cache');
+const audit  = require('../middleware/audit');
 const { toW3W } = require('../utils/w3w');
 const { getDrivingDistances, formatDistance, formatDuration } = require('../utils/mapbox');
 
@@ -102,9 +103,17 @@ router.get('/', async (req, res) => {
       SELECT s.*, COUNT(p.pump_id) pump_count
       FROM stations s LEFT JOIN pumps p ON p.station_id = s.station_id
       GROUP BY s.station_id ORDER BY s.district, s.station_name`);
-    // Attach fuel prices to every station (needed for price filter chips on map)
-    const [fuels] = await db.query('SELECT * FROM fuel_types ORDER BY fuel_type_id');
-    const stationsWithFuels = stations.map(s => ({ ...s, fuel_prices: fuels }));
+    // Attach per-station fuel prices derived from pumps
+    const [pumpFuels] = await db.query(`
+      SELECT p.station_id, ft.fuel_type_id, ft.fuel_name, ft.price_per_litre
+      FROM pumps p JOIN fuel_types ft ON p.fuel_type_id = ft.fuel_type_id
+      GROUP BY p.station_id, ft.fuel_type_id`);
+    const fuelsByStation = {};
+    for (const pf of pumpFuels) {
+      if (!fuelsByStation[pf.station_id]) fuelsByStation[pf.station_id] = [];
+      fuelsByStation[pf.station_id].push({ fuel_type_id: pf.fuel_type_id, fuel_name: pf.fuel_name, price_per_litre: pf.price_per_litre });
+    }
+    const stationsWithFuels = stations.map(s => ({ ...s, fuel_prices: fuelsByStation[s.station_id] || [] }));
     // Enrich with W3W addresses in parallel (non-blocking — cached after first call)
     await Promise.all(stationsWithFuels.map(async s => {
       if (s.latitude && s.longitude) {
@@ -164,6 +173,7 @@ router.put('/:id', authMW(['admin']), async (req, res) => {
       [station_name, location, district, contact_number, status, opening_hours, req.params.id]
     );
     cache.invalidatePrefix('stations:');
+    await audit({ req, action: 'UPDATE_STATION', targetType: 'station', targetId: Number(req.params.id), targetLabel: station_name, metadata: { location, district, status } });
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -177,6 +187,7 @@ router.post('/', authMW(['admin']), async (req, res) => {
       [station_name, location, district, latitude, longitude, contact_number, status || 'active', opening_hours]
     );
     cache.invalidatePrefix('stations:');
+    await audit({ req, action: 'CREATE_STATION', targetType: 'station', targetId: r.insertId, targetLabel: station_name, metadata: { district, status: status || 'active' } });
     res.status(201).json({ station_id: r.insertId });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -184,9 +195,11 @@ router.post('/', authMW(['admin']), async (req, res) => {
 // ── DELETE /api/stations/:id  (admin) ────────────
 router.delete('/:id', authMW(['admin']), async (req, res) => {
   try {
+    const [[station]] = await db.query('SELECT station_name FROM stations WHERE station_id=?', [req.params.id]);
     const [r] = await db.query('DELETE FROM stations WHERE station_id = ?', [req.params.id]);
     if (r.affectedRows === 0) return res.status(404).json({ error: 'Station not found' });
     cache.invalidatePrefix('stations:');
+    await audit({ req, action: 'DELETE_STATION', targetType: 'station', targetId: Number(req.params.id), targetLabel: station?.station_name ?? '' });
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

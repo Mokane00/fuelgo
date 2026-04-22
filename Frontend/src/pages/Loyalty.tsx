@@ -1,29 +1,29 @@
+import { ArrowDownLeft, Clock, Gift, Sparkles, Star, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Gift, Star, TrendingUp, Clock, ArrowDownLeft, Sparkles } from 'lucide-react';
 import { loyaltyApi } from '../api/api';
-import { useToast } from '../context/ToastContext';
-import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import { Card } from '../components/ui/Card';
+import { useToast } from '../context/ToastContext';
 import type { LoyaltyInfo } from '../types';
 
 const TIER_COLORS: Record<string, string> = {
-  Bronze:   'bg-amber-700',
-  Silver:   'bg-gray-400',
-  Gold:     'bg-yellow-500',
+  Bronze: 'bg-amber-700',
+  Silver: 'bg-gray-400',
+  Gold: 'bg-yellow-500',
   Platinum: 'bg-purple-600',
 };
 
 const TIER_BENEFITS: Record<string, string[]> = {
-  Bronze:   ['1 point per M1 spent', '5% discount on 10th fill-up', 'Birthday bonus 50pts'],
-  Silver:   ['1.5 pts per M1 spent', '8% discount on 5th fill-up', 'Priority support'],
-  Gold:     ['2 pts per M1 spent', '12% discount every 3rd fill-up', 'Free car wash monthly'],
+  Bronze: ['1 point per M1 spent', '5% discount on 10th fill-up', 'Birthday bonus 50pts'],
+  Silver: ['1.5 pts per M1 spent', '8% discount on 5th fill-up', 'Priority support'],
+  Gold: ['2 pts per M1 spent', '12% discount every 3rd fill-up', 'Free car wash monthly'],
   Platinum: ['3 pts per M1 spent', '15% discount on all fills', 'Dedicated concierge'],
 };
 
 export default function Loyalty() {
   const toast = useToast();
-  const [loyalty, setLoyalty]   = useState<LoyaltyInfo | null>(null);
-  const [loading, setLoading]   = useState(true);
+  const [loyalty, setLoyalty] = useState<LoyaltyInfo | null>(null);
+  const [loading, setLoading] = useState(true);
   const [redeemAmt, setRedeemAmt] = useState('');
   const [redeeming, setRedeeming] = useState(false);
 
@@ -128,15 +128,16 @@ export default function Loyalty() {
                     key={amt}
                     onClick={() => setRedeemAmt(String(amt))}
                     disabled={loyalty.points_balance < amt}
-                    className={`flex-1 py-2 rounded-sm text-xs font-medium border transition-all ${
-                      redeemAmt === String(amt) ? 'border-primary bg-primary/10 text-primary dark:text-blue-300' : 'border-border dark:border-white/20'
-                    } disabled:opacity-40`}
+                    className={`flex-1 py-2 rounded-sm text-xs font-medium border transition-all ${redeemAmt === String(amt) ? 'border-primary bg-primary/10 text-primary dark:text-blue-300' : 'border-border dark:border-white/20'
+                      } disabled:opacity-40`}
                   >
                     {amt}
                   </button>
                 ))}
               </div>
               <input
+                id="redeem-amount"
+                name="redeem_amount"
                 type="number"
                 className="input mb-3"
                 placeholder="Or enter custom amount"

@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" role="img" aria-label="FuelGO logo">
-  <!-- Fuel drop icon -->
-  <path d="M22 8 C22 8 10 22 10 32 C10 39.7 15.4 46 22 46 C28.6 46 34 39.7 34 32 C34 22 22 8 22 8Z" fill="#1A3C6E"/>
-  <!-- Lightning bolt inside drop -->
-  <path d="M25 22 L19 33 L23 33 L19 44 L27 30 L23 30 Z" fill="#F97316"/>
-  <!-- FuelGO text -->
-  <text x="42" y="38" font-family="'Syne',Arial,sans-serif" font-size="26" font-weight="800" fill="#1A3C6E" letter-spacing="-0.5">Fuel</text>
-  <text x="107" y="38" font-family="'Syne',Arial,sans-serif" font-size="26" font-weight="800" fill="#F97316" letter-spacing="-0.5">GO</text>
-</svg>
