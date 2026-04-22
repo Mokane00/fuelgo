@@ -50,8 +50,9 @@ router.get('/:id', authMW(), async (req, res) => {
 
 // POST /api/transactions  — create a fuelling transaction
 router.post('/', authMW(), async (req, res) => {
-  const conn = await db.getConnection();
+  let conn;
   try {
+    conn = await db.getConnection();
     await conn.beginTransaction();
 
     const { vehicle_id, pump_id, station_id, fuel_type_id, litres, price_per_litre, total_amount, payment_method } = req.body;
@@ -162,10 +163,10 @@ router.post('/', authMW(), async (req, res) => {
 
     res.status(201).json({ ...full, points_earned: pts, co2_kg });
   } catch (err) {
-    await conn.rollback();
+    if (conn) await conn.rollback().catch(() => {});
     res.status(500).json({ error: err.message });
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 });
 

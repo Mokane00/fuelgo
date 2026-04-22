@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "FuelGO — Digital fuel payment platform for Lesotho petrol stations",
   "scripts": {
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd Frontend && npm run dev\"",
+    "build": "npm ci --prefix Frontend && npm run build --prefix Frontend",
     "start": "node backend/server.js",
     "postinstall": "npm install --prefix backend"
   },
@@ -10,6 +12,9 @@
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.3.1",
     "mysql2": "^3.6.5"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   },
   "engines": {
     "node": ">=18.0.0"
